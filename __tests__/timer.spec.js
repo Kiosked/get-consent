@@ -20,11 +20,7 @@ describe("timer", function() {
         });
 
         it("expands mixed format", function() {
-            expect(expandTimings(["2x100", 500])).toEqual([
-                100,
-                100,
-                500
-            ]);
+            expect(expandTimings(["2x100", 500])).toEqual([100, 100, 500]);
         });
     });
 

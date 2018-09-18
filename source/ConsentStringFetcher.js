@@ -1,23 +1,11 @@
 import { startTimer, stopTimer } from "./timer.js";
 
-const CALLBACKS = [
-    "cmpDetected",
-    "consentData",
-    "consentString"
-];
+const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
 
 /**
  * Timing values for checking if the __cmp() method is available
  */
-const CMP_CHECK_TIMINGS = [
-    50,
-    100,
-    "2x200",
-    "3x300",
-    "10x500",
-    "10x750",
-    1000
-];
+const CMP_CHECK_TIMINGS = [50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
 
 /**
  * GDPR consent data
@@ -121,9 +109,7 @@ export default class ConsentStringFetcher {
      * @readonly
      */
     get consentData() {
-        return this._lastSuccessfulData
-            ? Object.freeze(this._lastSuccessfulData)
-            : null;
+        return this._lastSuccessfulData ? Object.freeze(this._lastSuccessfulData) : null;
     }
 
     /**

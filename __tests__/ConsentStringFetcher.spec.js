@@ -45,8 +45,7 @@ describe("ConsentStringFetcher", function() {
     });
 
     describe("on", function() {
-        let consentFetcher,
-            win;
+        let consentFetcher, win;
 
         beforeEach(function() {
             win = {};
@@ -72,10 +71,13 @@ describe("ConsentStringFetcher", function() {
         describe("consentData event", function() {
             it("provides the consent data from the __cmp call", function() {
                 return Promise.resolve()
-                    .then(() => new Promise(resolve => {
-                        consentFetcher.on("consentData", resolve);
-                        setTimeout(mockCMP, 100);
-                    }))
+                    .then(
+                        () =>
+                            new Promise(resolve => {
+                                consentFetcher.on("consentData", resolve);
+                                setTimeout(mockCMP, 100);
+                            })
+                    )
                     .then(consentData => {
                         expect(consentData).toEqual(SAMPLE_CONSENT_DATA);
                         expect(win.__cmp.calledWith("getConsentData")).toBe(true);
@@ -87,10 +89,13 @@ describe("ConsentStringFetcher", function() {
         describe("consentString event", function() {
             it("provides the consent string from the __cmp call", function() {
                 return Promise.resolve()
-                    .then(() => new Promise(resolve => {
-                        consentFetcher.on("consentString", resolve);
-                        setTimeout(mockCMP, 100);
-                    }))
+                    .then(
+                        () =>
+                            new Promise(resolve => {
+                                consentFetcher.on("consentString", resolve);
+                                setTimeout(mockCMP, 100);
+                            })
+                    )
                     .then(str => {
                         expect(str).toEqual(SAMPLE_CONSENT_DATA.consentData);
                         expect(win.__cmp.calledWith("getConsentData")).toBe(true);

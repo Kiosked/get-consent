@@ -12,7 +12,9 @@ export function expandTimings(timings) {
         }
         const [count, delay] = raw.split(/x/i);
         if (!count || count <= 0 || !/^\d+$/.test(delay)) {
-            throw new Error(`Failed expanding raw timings: Expected (count)x(delay), got: ${count}x${delay}`);
+            throw new Error(
+                `Failed expanding raw timings: Expected (count)x(delay), got: ${count}x${delay}`
+            );
         }
         for (let i = 0; i < parseInt(count, 10); i += 1) {
             computedTimings.push(parseInt(delay, 10));
@@ -31,9 +33,7 @@ export function startTimer(cb, timings) {
         if (!timer.enabled) {
             return;
         }
-        const nextTime = timingArr.length > 1
-            ? timingArr.shift()
-            : timingArr[0];
+        const nextTime = timingArr.length > 1 ? timingArr.shift() : timingArr[0];
         timer.jsTimer = setTimeout(() => {
             try {
                 cb();
