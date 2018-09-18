@@ -1,7 +1,7 @@
 # Get-Consent
 > GDPR consent string fetcher
 
-[![Build Status](https://travis-ci.org/Kiosked/get-consent.svg?branch=master)](https://travis-ci.org/Kiosked/get-consent)
+[![Build Status](https://travis-ci.org/Kiosked/get-consent.svg?branch=master)](https://travis-ci.org/Kiosked/get-consent) [![npm version](https://badge.fury.io/js/get-consent.svg)](https://www.npmjs.com/package/get-consent)
 
 ## About
 **Get-Consent** is a helper library to make collecting GDPR consent data from CMPs easier. Consent data is typically collected from a [`window.__cmp()` function call](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/CMP%20JS%20API%20v1.1%20Final.md#what-api-will-need-to-be-provided-by-the-cmp-) by providing certain parameters. This is tedious as the function may arrive (be assigned and ready) later, or may never arrive at all. This library wraps a smart interface around the `__cmp()` call for fetching consent so that you don't have to worry about the details.
