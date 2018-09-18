@@ -4,6 +4,7 @@ const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
 
 /**
  * Timing values for checking if the __cmp() method is available
+ * @private
  */
 const CMP_CHECK_TIMINGS = [50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
 
@@ -73,6 +74,7 @@ function initFetcher(fetcher) {
 
 /**
  * Consent String fetcher
+ * @class ConsentStringFetcher
  */
 export default class ConsentStringFetcher {
     /**
