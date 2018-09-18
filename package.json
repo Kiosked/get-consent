@@ -2,17 +2,26 @@
   "name": "get-consent",
   "version": "0.1.0",
   "description": "GDPR consent string fetcher",
-  "main": "source/index.js",
+  "main": "dist/get-consent.min.js",
   "scripts": {
     "build": "webpack --mode production --config webpack.config.js && webpack --mode development --config webpack.config.js",
     "dev": "webpack --mode development --config webpack.config.js",
-    "test": "npm run test:specs",
+    "format": "prettier --write '{source,__tests__}/**/*.js'",
+    "precommit": "lint-staged",
+    "test": "npm run test:specs && npm run test:format",
+    "test:format": "prettier-check '{source,__tests__}/**/*.js'",
     "test:specs": "jest"
   },
   "files": [
     "dist/**/*.js",
     "API.md"
   ],
+  "lint-staged": {
+    "{source,__tests__}/**/*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
   "jest": {
     "moduleFileExtensions": [
       "js"
@@ -49,7 +58,11 @@
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.2",
+    "husky": "^0.14.3",
     "jest": "^23.6.0",
+    "lint-staged": "^7.2.2",
+    "prettier": "^1.14.2",
+    "prettier-check": "^2.0.0",
     "sinon": "^6.3.4",
     "sleep-promise": "^8.0.1",
     "webpack": "^4.19.1",
