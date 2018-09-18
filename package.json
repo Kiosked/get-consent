@@ -22,5 +22,6 @@
   "bugs": {
     "url": "https://github.com/Kiosked/get-consent/issues"
   },
-  "homepage": "https://github.com/Kiosked/get-consent#readme"
+  "homepage": "https://github.com/Kiosked/get-consent#readme",
+  "devDependencies": {}
 }
