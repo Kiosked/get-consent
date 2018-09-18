@@ -13,6 +13,18 @@
     "dist/**/*.js",
     "API.md"
   ],
+  "jest": {
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "source"
+    ],
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kiosked/get-consent.git"
@@ -32,11 +44,14 @@
   "homepage": "https://github.com/Kiosked/get-consent#readme",
   "devDependencies": {
     "@babel/core": "^7.1.0",
+    "@babel/plugin-transform-modules-commonjs": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.2",
     "jest": "^23.6.0",
+    "sinon": "^6.3.4",
+    "sleep-promise": "^8.0.1",
     "webpack": "^4.19.1",
     "webpack-cli": "^3.1.0"
   }

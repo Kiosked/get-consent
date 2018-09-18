@@ -65,8 +65,11 @@ function initFetcher(fetcher) {
     const checkCMP = () => {
         if (typeof win.__cmp === "function") {
             fetcher._fireCallback("cmpDetected", null);
-            stop(timer);
+            stopTimer(timer);
             win.__cmp("getConsentData", null, (consentPayload, wasSuccessful) => {
+                if (!fetcher || !fetcher._alive) {
+                    return;
+                }
                 if (!wasSuccessful || !consentPayloadValid(consentPayload)) {
                     return;
                 }
@@ -76,7 +79,8 @@ function initFetcher(fetcher) {
             });
         }
     };
-    timer = startTimer(checkCMP, CMP_CHECK_TIMINGS);
+    fetcher._timer = timer = startTimer(checkCMP, CMP_CHECK_TIMINGS);
+    setTimeout(checkCMP, 0);
 }
 
 /**
@@ -106,6 +110,7 @@ export default class ConsentStringFetcher {
         this._window = win;
         this._lastSuccessfulData = null;
         this._callbacks = CALLBACKS.reduce((out, cbName) => ({ ...out, [cbName]: [] }), {});
+        this._alive = true;
         initFetcher(this);
     }
 
@@ -152,6 +157,17 @@ export default class ConsentStringFetcher {
         return {
             remove: () => this.off(eventType, callback)
         };
+    }
+
+    /**
+     * Shutdown the fetcher (detatch from window)
+     * @memberof ConsentStringFetcher
+     */
+    shutdown() {
+        if (this._timer) {
+            stopTimer(this._timer);
+        }
+        this._alive = false;
     }
 
     /**

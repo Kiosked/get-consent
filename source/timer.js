@@ -1,4 +1,4 @@
-function expandTimings(timings) {
+export function expandTimings(timings) {
     if (typeof timings === "number") {
         return timings;
     } else if (!Array.isArray) {
