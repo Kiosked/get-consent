@@ -34,4 +34,32 @@ describe("timer", function() {
             });
         });
     });
+
+    describe("stopTimer", function() {
+        it("stops the timer", function() {
+            const cb = sinon.spy();
+            const timer = startTimer(cb, [50]);
+            return sleep(55)
+                .then(() => {
+                    stopTimer(timer);
+                    return sleep(55);
+                })
+                .then(() => {
+                    expect(cb.calledOnce).toBe(true);
+                });
+        });
+
+        it("stops the timer before it has started", function() {
+            const cb = sinon.spy();
+            const timer = startTimer(cb, [50]);
+            return sleep(10)
+                .then(() => {
+                    stopTimer(timer);
+                    return sleep(50);
+                })
+                .then(() => {
+                    expect(cb.notCalled).toBe(true);
+                });
+        });
+    });
 });
