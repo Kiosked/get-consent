@@ -6,7 +6,7 @@ const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
  * Timing values for checking if the __cmp() method is available
  * @private
  */
-const CMP_CHECK_TIMINGS = [50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
+const CMP_CHECK_TIMINGS = [0, 50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
 
 /**
  * GDPR consent data
@@ -69,7 +69,6 @@ function initFetcher(fetcher) {
         }
     };
     fetcher._timer = timer = startTimer(checkCMP, CMP_CHECK_TIMINGS);
-    setTimeout(checkCMP, 0);
 }
 
 /**

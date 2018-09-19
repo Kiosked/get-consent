@@ -1,4 +1,3 @@
-
 const path = require("path");
 
 const DIST = path.resolve(__dirname, "./dist");

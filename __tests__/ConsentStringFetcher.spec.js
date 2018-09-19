@@ -84,6 +84,15 @@ describe("ConsentStringFetcher", function() {
                         expect(win.__cmp.callCount).toBe(1);
                     });
             });
+
+            it("fires the event only once when CMP data becomes available", function() {
+                const cb = sinon.spy();
+                consentFetcher.on("consentData", cb);
+                mockCMP();
+                return sleep(1200).then(() => {
+                    expect(cb.calledOnce).toBe(true);
+                });
+            });
         });
 
         describe("consentString event", function() {
