@@ -1,3 +1,4 @@
+import pTimeout from "p-timeout";
 import { startTimer, stopTimer } from "./timer.js";
 
 const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
@@ -161,11 +162,15 @@ export default class ConsentStringFetcher {
 
     /**
      * Wait for the appearance of a __cmp method
+     * @param {Number|null=} timeout Timeout, in milliseconds, to wait for a
+     *  CMP to appear
      * @returns {Promise} A promise that resolves once a CMP has been detected
      * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
      */
-    waitForCMP() {
-        return new Promise(resolve => {
+    waitForCMP(timeout = null) {
+        const work = new Promise(resolve => {
             if (this._cmpDetected) {
                 return resolve();
             }
@@ -174,17 +179,22 @@ export default class ConsentStringFetcher {
                 resolve();
             });
         });
+        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for CMP");
     }
 
     /**
      * Wait for consent data
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  consent data
      * @returns {Promise.<CMPConsentData>} Promise that resolves with consent data
      *  from the CMP system. Be aware that the promise may never resolve if consent
      *  data is never received.
      * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
      */
-    waitForConsent() {
-        return new Promise(resolve => {
+    waitForConsent(timeout = null) {
+        const work = new Promise(resolve => {
             if (this.consentData) {
                 return resolve(this.consentData);
             }
@@ -193,17 +203,22 @@ export default class ConsentStringFetcher {
                 resolve(data);
             });
         });
+        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for consent");
     }
 
     /**
      * Wait for a consent string
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  a consent string
      * @returns {Promise.<String>} Promise that resolves with a consent string
      *  from the CMP system.
      * @see waitForConsent
      * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
      */
-    waitForConsentString() {
-        return this.waitForConsent().then(data => data.consentData);
+    waitForConsentString(timeout) {
+        return this.waitForConsent(timeout).then(data => data.consentData);
     }
 
     /**
