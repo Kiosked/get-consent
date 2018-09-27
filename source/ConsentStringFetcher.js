@@ -53,6 +53,7 @@ function initFetcher(fetcher) {
     let timer;
     const checkCMP = () => {
         if (typeof win.__cmp === "function") {
+            fetcher._cmpDetected = true;
             fetcher._fireCallback("cmpDetected", null);
             stopTimer(timer);
             win.__cmp("getConsentData", null, (consentPayload, wasSuccessful) => {
@@ -98,6 +99,7 @@ export default class ConsentStringFetcher {
         }
         this._window = win;
         this._lastSuccessfulData = null;
+        this._cmpDetected = false;
         this._callbacks = CALLBACKS.reduce((out, cbName) => ({ ...out, [cbName]: [] }), {});
         this._alive = true;
         initFetcher(this);
@@ -155,6 +157,23 @@ export default class ConsentStringFetcher {
             stopTimer(this._timer);
         }
         this._alive = false;
+    }
+
+    /**
+     * Wait for the appearance of a __cmp method
+     * @returns {Promise} A promise that resolves once a CMP has been detected
+     * @memberof ConsentStringFetcher
+     */
+    waitForCMP() {
+        return new Promise(resolve => {
+            if (this._cmpDetected) {
+                return resolve();
+            }
+            const { remove } = this.on("cmpDetected", () => {
+                remove();
+                resolve();
+            });
+        });
     }
 
     /**

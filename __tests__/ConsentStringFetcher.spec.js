@@ -114,6 +114,13 @@ describe("ConsentStringFetcher", function() {
             });
         });
 
+        describe("waitForCMP", function() {
+            it("resolves once the __cmp method has been detected", function() {
+                setTimeout(mockCMP, 100);
+                return consentFetcher.waitForCMP();
+            });
+        });
+
         describe("waitForConsent", function() {
             it("provides consent data", function() {
                 const work = consentFetcher.waitForConsent();
