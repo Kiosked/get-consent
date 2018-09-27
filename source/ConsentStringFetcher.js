@@ -171,7 +171,7 @@ export default class ConsentStringFetcher {
             }
             const { remove } = this.on("consentData", data => {
                 remove();
-                return data;
+                resolve(data);
             });
         });
     }
