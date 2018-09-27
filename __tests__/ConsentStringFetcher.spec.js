@@ -39,7 +39,7 @@ describe("ConsentStringFetcher", function() {
         });
 
         it("returns the payload if present", function() {
-            consentFetcher._lastSuccessfulData = Object.assign({}, SAMPLE_CONSENT_DATA);
+            consentFetcher._lastConsentData = Object.assign({}, SAMPLE_CONSENT_DATA);
             expect(consentFetcher.consentData).toEqual(SAMPLE_CONSENT_DATA);
         });
     });
@@ -82,7 +82,7 @@ describe("ConsentStringFetcher", function() {
                     .then(consentData => {
                         expect(consentData).toEqual(SAMPLE_CONSENT_DATA);
                         expect(win.__cmp.calledWith("getConsentData")).toBe(true);
-                        expect(win.__cmp.callCount).toBe(1);
+                        expect(win.__cmp.callCount).toBeGreaterThanOrEqual(1);
                     });
             });
 
@@ -109,7 +109,7 @@ describe("ConsentStringFetcher", function() {
                     .then(str => {
                         expect(str).toEqual(SAMPLE_CONSENT_DATA.consentData);
                         expect(win.__cmp.calledWith("getConsentData")).toBe(true);
-                        expect(win.__cmp.callCount).toBe(1);
+                        expect(win.__cmp.callCount).toBeGreaterThanOrEqual(1);
                     });
             });
         });
