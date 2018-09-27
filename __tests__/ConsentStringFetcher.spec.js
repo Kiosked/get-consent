@@ -119,6 +119,17 @@ describe("ConsentStringFetcher", function() {
                 setTimeout(mockCMP, 100);
                 return consentFetcher.waitForCMP();
             });
+
+            it("throws a TimeoutError if timeout reached", function() {
+                return consentFetcher
+                    .waitForCMP(100)
+                    .then(() => {
+                        throw new Error("Should have timed out");
+                    })
+                    .catch(err => {
+                        expect(err.name).toBe("TimeoutError");
+                    });
+            });
         });
 
         describe("waitForConsent", function() {
@@ -136,6 +147,38 @@ describe("ConsentStringFetcher", function() {
                     .then(() => consentFetcher.waitForConsent())
                     .then(consentData => {
                         expect(consentData).toEqual(SAMPLE_CONSENT_DATA);
+                    });
+            });
+
+            it("throws a TimeoutError if timeout reached", function() {
+                return consentFetcher
+                    .waitForConsent(100)
+                    .then(() => {
+                        throw new Error("Should have timed out");
+                    })
+                    .catch(err => {
+                        expect(err.name).toBe("TimeoutError");
+                    });
+            });
+        });
+
+        describe("waitForConsent", function() {
+            it("provides consent string", function() {
+                const work = consentFetcher.waitForConsentString();
+                setTimeout(mockCMP, 100);
+                return work.then(consentString => {
+                    expect(consentString).toEqual(SAMPLE_CONSENT_DATA.consentData);
+                });
+            });
+
+            it("throws a TimeoutError if timeout reached", function() {
+                return consentFetcher
+                    .waitForConsentString(100)
+                    .then(() => {
+                        throw new Error("Should have timed out");
+                    })
+                    .catch(err => {
+                        expect(err.name).toBe("TimeoutError");
                     });
             });
         });
