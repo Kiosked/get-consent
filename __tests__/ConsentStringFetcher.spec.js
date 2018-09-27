@@ -54,6 +54,7 @@ describe("ConsentStringFetcher", function() {
 
         afterEach(function() {
             consentFetcher.shutdown();
+            win.__cmp = undefined;
         });
 
         function mockCMP(success = true) {
@@ -68,7 +69,7 @@ describe("ConsentStringFetcher", function() {
             });
         }
 
-        describe("consentData event", function() {
+        describe("event:consentData", function() {
             it("provides the consent data from the __cmp call", function() {
                 return Promise.resolve()
                     .then(
@@ -95,7 +96,7 @@ describe("ConsentStringFetcher", function() {
             });
         });
 
-        describe("consentString event", function() {
+        describe("event:consentString", function() {
             it("provides the consent string from the __cmp call", function() {
                 return Promise.resolve()
                     .then(
@@ -109,6 +110,25 @@ describe("ConsentStringFetcher", function() {
                         expect(str).toEqual(SAMPLE_CONSENT_DATA.consentData);
                         expect(win.__cmp.calledWith("getConsentData")).toBe(true);
                         expect(win.__cmp.callCount).toBe(1);
+                    });
+            });
+        });
+
+        describe("waitForConsent", function() {
+            it("provides consent data", function() {
+                const work = consentFetcher.waitForConsent();
+                setTimeout(mockCMP, 100);
+                return work.then(consentData => {
+                    expect(consentData).toEqual(SAMPLE_CONSENT_DATA);
+                });
+            });
+
+            it("fires after CMP data has been fetched", function() {
+                mockCMP();
+                return sleep(150)
+                    .then(() => consentFetcher.waitForConsent())
+                    .then(consentData => {
+                        expect(consentData).toEqual(SAMPLE_CONSENT_DATA);
                     });
             });
         });
