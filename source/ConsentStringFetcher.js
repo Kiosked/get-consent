@@ -63,7 +63,7 @@ function initFetcher(fetcher) {
                     return;
                 }
                 fetcher._lastSuccessfulData = Object.assign({}, consentPayload);
-                fetcher._fireCallback("consentData", consentPayload);
+                fetcher._fireCallback("consentData", fetcher._lastSuccessfulData);
                 fetcher._fireCallback("consentString", consentPayload.consentData);
             });
         }
@@ -166,6 +166,9 @@ export default class ConsentStringFetcher {
      */
     waitForConsent() {
         return new Promise(resolve => {
+            if (this.consentData) {
+                return resolve(this.consentData);
+            }
             const { remove } = this.on("consentData", data => {
                 remove();
                 return data;
