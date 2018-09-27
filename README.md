@@ -49,6 +49,8 @@ fetcher.waitForConsent().then(consentData => {
  1. Calling the `remove` method returned in the object by `.on()`
  2. Calling `fetcher.off(eventName, callback)`
 
+**NB**: Attaching event listeners too late after instantiating a new `ConsentStringFetcher` may result in the event listeners never being called (as there was already an update emitted, but your listener may not have been attached so early). You should always check for the data before attaching the listener, or by simply using the `waitForConsent` type of methods.
+
 ### Fetching the consent string directly
 If you're just after the consent string itself, there are some more _direct_ methods to get it:
 
@@ -64,6 +66,51 @@ fetcher.waitForConsentString().then(consentStr => {
 fetcher.on("consentString", data => {
     // "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ"
 });
+```
+
+### Vendor consents
+It's possible to fetch individual vendor consent flags using this library:
+
+```javascript
+import { ConsentStringFetcher } from "get-consent";
+
+const fetcher = new ConsentStringFetcher(myWin);
+
+fetcher.on("vendorConsentsData", data => {
+    // {
+    //     gdprApplies: true,
+    //     hasGlobalScope: false,
+    //     metaData: "AAAAAAAAAAAAAAAAAAAAAAA",
+    //     purposeConsents: {
+    //         "1": true,
+    //         "2": true,
+    //         "3": true
+    //     },
+    //     vendorConsents: {
+    //         "1": false,
+    //         "2": true,
+    //         "3": false
+    //     }
+    // }
+});
+
+fetcher.waitForVendorConsents().then(data => {
+    const hasConsent = !!data.vendorConsents[VENDORID.toString(10)];
+});
+```
+
+### Timeouts
+All of the waitFor* methods can be timed-out using a parameter, for example:
+
+```javascript
+fetcher.waitForConsent(150)
+    .then(() => {
+        // called if CMP gets back to us in under 150ms
+    })
+    .catch(err => {
+        // err is a TimeoutError if the CMP takes longer
+        // than 150ms
+    });
 ```
 
 ## Compatibility
