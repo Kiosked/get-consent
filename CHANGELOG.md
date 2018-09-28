@@ -1,6 +1,6 @@
 # Get-Consent changelog
 
-## v0.2.0
+## v0.2.1
 _2018-09-28_
 
  * **Bugfix**: `waitForConsent` (and thusly `waitForConsentString`) would not resolve if called _after_ the `__cmp` method was located and requested
