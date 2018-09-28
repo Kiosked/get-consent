@@ -1,6 +1,7 @@
+import pTimeout from "p-timeout";
 import { startTimer, stopTimer } from "./timer.js";
 
-const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
+const CALLBACKS = ["cmpDetected", "consentData", "consentString", "vendorConsentsData"];
 
 /**
  * Timing values for checking if the __cmp() method is available
@@ -9,11 +10,20 @@ const CALLBACKS = ["cmpDetected", "consentData", "consentString"];
 const CMP_CHECK_TIMINGS = [0, 50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
 
 /**
- * GDPR consent data
+ * GDPR consent data (from getConsentData)
  * @typedef {Object} CMPConsentData
  * @property {String} consentData - GDPR consent string
- * @property {Boolean} gdprApplies - Whether GDPR applies in the current context
+ * @property {Boolean} gdprApplies - Whether GDPR applies in the current context or not
  * @property {Boolean} hasGlobalScope - "true if the vendor consent data is retrieved from the global cookie, false if from a publisher-specific (or publisher-group-specific) cookie"
+ */
+
+/**
+ * GDPR vendor consents (from getVendorConsents)
+ * @typedef {Object} CMPVendorConsentsData
+ * @property {Boolean} gdprApplies - Whether GDPR applies in the current context or not
+ * @property {Boolean} hasGlobalScope - "true if the vendor consent data is retrieved from the global cookie, false if from a publisher-specific (or publisher-group-specific) cookie"
+ * @property {Object} purposeConsents - Key-value object with purpose consent statuses. Key is vendor ID, value is true/false for consent.
+ * @property {Object} vendorConsents - Key-value object with vendor consent statuses. Key is vendor ID, value is true/false for consent.
  */
 
 /**
@@ -53,6 +63,7 @@ function initFetcher(fetcher) {
     let timer;
     const checkCMP = () => {
         if (typeof win.__cmp === "function") {
+            fetcher._cmpDetected = true;
             fetcher._fireCallback("cmpDetected", null);
             stopTimer(timer);
             win.__cmp("getConsentData", null, (consentPayload, wasSuccessful) => {
@@ -62,9 +73,16 @@ function initFetcher(fetcher) {
                 if (!wasSuccessful || !consentPayloadValid(consentPayload)) {
                     return;
                 }
-                fetcher._lastSuccessfulData = Object.assign({}, consentPayload);
-                fetcher._fireCallback("consentData", consentPayload);
+                fetcher._lastConsentData = Object.assign({}, consentPayload);
+                fetcher._fireCallback("consentData", fetcher._lastConsentData);
                 fetcher._fireCallback("consentString", consentPayload.consentData);
+            });
+            win.__cmp("getVendorConsents", null, vendorConsentsPayload => {
+                if (!fetcher || !fetcher._alive) {
+                    return;
+                }
+                fetcher._lastVendorConsentsData = Object.assign({}, vendorConsentsPayload);
+                fetcher._fireCallback("vendorConsentsData", fetcher._lastVendorConsentsData);
             });
         }
     };
@@ -97,20 +115,32 @@ export default class ConsentStringFetcher {
             throw new Error("First parameter is required (window)");
         }
         this._window = win;
-        this._lastSuccessfulData = null;
+        this._lastConsentData = null;
+        this._lastVendorConsentsData = null;
+        this._cmpDetected = false;
         this._callbacks = CALLBACKS.reduce((out, cbName) => ({ ...out, [cbName]: [] }), {});
         this._alive = true;
         initFetcher(this);
     }
 
     /**
-     * The last successfully fetched consent data object
+     * The last successfully fetched consent data object (getConsentData)
      * @type {CMPConsentData|null}
      * @memberof ConsentStringFetcher
      * @readonly
      */
     get consentData() {
-        return this._lastSuccessfulData ? Object.freeze(this._lastSuccessfulData) : null;
+        return this._lastConsentData ? Object.freeze(this._lastConsentData) : null;
+    }
+
+    /**
+     * The last successfully fetched vendor consents payload (getVendorConsents)
+     * @type {CMPVendorConsentsData|null}
+     * @memberof ConsentStringFetcher
+     * @readonly
+     */
+    get vendorConsentsData() {
+        return this._lastVendorConsentsData ? Object.freeze(this._lastVendorConsentsData) : null;
     }
 
     /**
@@ -158,30 +188,88 @@ export default class ConsentStringFetcher {
     }
 
     /**
-     * Wait for consent data
-     * @returns {Promise.<CMPConsentData>} Promise that resolves with consent data
-     *  from the CMP system. Be aware that the promise may never resolve if consent
-     *  data is never received.
+     * Wait for the appearance of a __cmp method
+     * @param {Number|null=} timeout Timeout, in milliseconds, to wait for a
+     *  CMP to appear
+     * @returns {Promise} A promise that resolves once a CMP has been detected
      * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
      */
-    waitForConsent() {
-        return new Promise(resolve => {
-            const { remove } = this.on("consentData", data => {
+    waitForCMP(timeout = null) {
+        const work = new Promise(resolve => {
+            if (this._cmpDetected) {
+                return resolve();
+            }
+            const { remove } = this.on("cmpDetected", () => {
                 remove();
-                return data;
+                resolve();
             });
         });
+        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for CMP");
+    }
+
+    /**
+     * Wait for consent data
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  consent data
+     * @returns {Promise.<CMPConsentData>} Promise that resolves with consent data
+     *  from the CMP system
+     * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
+     */
+    waitForConsent(timeout = null) {
+        const work = new Promise(resolve => {
+            if (this.consentData) {
+                return resolve(this.consentData);
+            }
+            const { remove } = this.on("consentData", data => {
+                remove();
+                resolve(data);
+            });
+        });
+        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for consent");
     }
 
     /**
      * Wait for a consent string
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  a consent string
      * @returns {Promise.<String>} Promise that resolves with a consent string
      *  from the CMP system.
      * @see waitForConsent
      * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
      */
-    waitForConsentString() {
-        return this.waitForConsent().then(data => data.consentData);
+    waitForConsentString(timeout) {
+        return this.waitForConsent(timeout).then(data => data.consentData);
+    }
+
+    /**
+     * Wait for vendor consents (getVendorConsents)
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  vendor consents
+     * @returns {Promise.<CMPVendorConsentsData>} Promise that resolves with vendor
+     *  consents once available
+     * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
+     */
+    waitForVendorConsents(timeout = null) {
+        const work = new Promise(resolve => {
+            if (this.vendorConsentsData) {
+                return resolve(this.vendorConsentsData);
+            }
+            const { remove } = this.on("vendorConsentsData", data => {
+                remove();
+                resolve(data);
+            });
+        });
+        return timeout === null
+            ? work
+            : pTimeout(work, timeout, "Timed out waiting for vendor consents");
     }
 
     /**

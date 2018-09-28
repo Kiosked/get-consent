@@ -69,5 +69,8 @@
     "sleep-promise": "^8.0.1",
     "webpack": "^4.19.1",
     "webpack-cli": "^3.1.0"
+  },
+  "dependencies": {
+    "p-timeout": "^2.0.1"
   }
 }
