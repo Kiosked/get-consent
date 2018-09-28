@@ -1,5 +1,5 @@
-import pTimeout from "p-timeout";
 import { startTimer, stopTimer } from "./timer.js";
+import { timeoutPromise } from "./timeout.js";
 
 const CALLBACKS = ["cmpDetected", "consentData", "consentString", "vendorConsentsData"];
 
@@ -206,7 +206,7 @@ export default class ConsentStringFetcher {
                 resolve();
             });
         });
-        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for CMP");
+        return timeout === null ? work : timeoutPromise(work, timeout, "Timed out waiting for CMP");
     }
 
     /**
@@ -229,7 +229,9 @@ export default class ConsentStringFetcher {
                 resolve(data);
             });
         });
-        return timeout === null ? work : pTimeout(work, timeout, "Timed out waiting for consent");
+        return timeout === null
+            ? work
+            : timeoutPromise(work, timeout, "Timed out waiting for consent");
     }
 
     /**
@@ -269,7 +271,7 @@ export default class ConsentStringFetcher {
         });
         return timeout === null
             ? work
-            : pTimeout(work, timeout, "Timed out waiting for vendor consents");
+            : timeoutPromise(work, timeout, "Timed out waiting for vendor consents");
     }
 
     /**
