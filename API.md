@@ -17,7 +17,10 @@
 
 <dl>
 <dt><a href="#CMPConsentData">CMPConsentData</a> : <code>Object</code></dt>
-<dd><p>GDPR consent data</p>
+<dd><p>GDPR consent data (from getConsentData)</p>
+</dd>
+<dt><a href="#CMPVendorConsentsData">CMPVendorConsentsData</a> : <code>Object</code></dt>
+<dd><p>GDPR vendor consents (from getVendorConsents)</p>
 </dd>
 <dt><a href="#OnMethodReturnValue">OnMethodReturnValue</a></dt>
 <dd><p>.on() return value</p>
@@ -34,12 +37,15 @@
     * [.module.exports](#ConsentStringFetcher.module.exports)
         * [new module.exports(win)](#new_ConsentStringFetcher.module.exports_new)
     * [.consentData](#ConsentStringFetcher.consentData) : [<code>CMPConsentData</code>](#CMPConsentData) \| <code>null</code>
+    * [.vendorConsentsData](#ConsentStringFetcher.vendorConsentsData) : [<code>CMPVendorConsentsData</code>](#CMPVendorConsentsData) \| <code>null</code>
     * [.attachToWindow([win])](#ConsentStringFetcher.attachToWindow) ⇒ [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)
     * [.off(eventType, callback)](#ConsentStringFetcher.off)
     * [.on(eventType, callback)](#ConsentStringFetcher.on) ⇒ [<code>OnMethodReturnValue</code>](#OnMethodReturnValue)
     * [.shutdown()](#ConsentStringFetcher.shutdown)
-    * [.waitForConsent()](#ConsentStringFetcher.waitForConsent) ⇒ [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData)
-    * [.waitForConsentString()](#ConsentStringFetcher.waitForConsentString) ⇒ <code>Promise.&lt;String&gt;</code>
+    * [.waitForCMP(timeout)](#ConsentStringFetcher.waitForCMP) ⇒ <code>Promise</code>
+    * [.waitForConsent(timeout)](#ConsentStringFetcher.waitForConsent) ⇒ [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData)
+    * [.waitForConsentString(timeout)](#ConsentStringFetcher.waitForConsentString) ⇒ <code>Promise.&lt;String&gt;</code>
+    * [.waitForVendorConsents(timeout)](#ConsentStringFetcher.waitForVendorConsents) ⇒ [<code>Promise.&lt;CMPVendorConsentsData&gt;</code>](#CMPVendorConsentsData)
     * [._fireCallback(type, data)](#ConsentStringFetcher._fireCallback)
 
 <a name="new_ConsentStringFetcher_new"></a>
@@ -64,7 +70,14 @@ Constructor for the fetcher
 <a name="ConsentStringFetcher.consentData"></a>
 
 ### ConsentStringFetcher.consentData : [<code>CMPConsentData</code>](#CMPConsentData) \| <code>null</code>
-The last successfully fetched consent data object
+The last successfully fetched consent data object (getConsentData)
+
+**Kind**: static property of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
+**Read only**: true  
+<a name="ConsentStringFetcher.vendorConsentsData"></a>
+
+### ConsentStringFetcher.vendorConsentsData : [<code>CMPVendorConsentsData</code>](#CMPVendorConsentsData) \| <code>null</code>
+The last successfully fetched vendor consents payload (getVendorConsents)
 
 **Kind**: static property of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
 **Read only**: true  
@@ -111,24 +124,78 @@ Attach an event
 Shutdown the fetcher (detatch from window)
 
 **Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
+<a name="ConsentStringFetcher.waitForCMP"></a>
+
+### ConsentStringFetcher.waitForCMP(timeout) ⇒ <code>Promise</code>
+Wait for the appearance of a __cmp method
+
+**Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
+**Returns**: <code>Promise</code> - A promise that resolves once a CMP has been detected  
+**Throws**:
+
+- <code>TimeoutError</code> Throws a timeout error if the timeout is
+ specified and it is reached
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| timeout | <code>Number</code> \| <code>null</code> | <code></code> | Timeout, in milliseconds, to wait for a  CMP to appear |
+
 <a name="ConsentStringFetcher.waitForConsent"></a>
 
-### ConsentStringFetcher.waitForConsent() ⇒ [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData)
+### ConsentStringFetcher.waitForConsent(timeout) ⇒ [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData)
 Wait for consent data
 
 **Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
 **Returns**: [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData) - Promise that resolves with consent data
- from the CMP system. Be aware that the promise may never resolve if consent
- data is never received.  
+ from the CMP system  
+**Throws**:
+
+- <code>TimeoutError</code> Throws a timeout error if the timeout is
+ specified and it is reached
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| timeout | <code>Number</code> \| <code>null</code> | <code></code> | Timeout, in milliseconds, for the fetching of  consent data |
+
 <a name="ConsentStringFetcher.waitForConsentString"></a>
 
-### ConsentStringFetcher.waitForConsentString() ⇒ <code>Promise.&lt;String&gt;</code>
+### ConsentStringFetcher.waitForConsentString(timeout) ⇒ <code>Promise.&lt;String&gt;</code>
 Wait for a consent string
 
 **Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
 **Returns**: <code>Promise.&lt;String&gt;</code> - Promise that resolves with a consent string
  from the CMP system.  
+**Throws**:
+
+- <code>TimeoutError</code> Throws a timeout error if the timeout is
+ specified and it is reached
+
 **See**: waitForConsent  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| timeout | <code>Number</code> \| <code>null</code> | Timeout, in milliseconds, for the fetching of  a consent string |
+
+<a name="ConsentStringFetcher.waitForVendorConsents"></a>
+
+### ConsentStringFetcher.waitForVendorConsents(timeout) ⇒ [<code>Promise.&lt;CMPVendorConsentsData&gt;</code>](#CMPVendorConsentsData)
+Wait for vendor consents (getVendorConsents)
+
+**Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
+**Returns**: [<code>Promise.&lt;CMPVendorConsentsData&gt;</code>](#CMPVendorConsentsData) - Promise that resolves with vendor
+ consents once available  
+**Throws**:
+
+- <code>TimeoutError</code> Throws a timeout error if the timeout is
+ specified and it is reached
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| timeout | <code>Number</code> \| <code>null</code> | <code></code> | Timeout, in milliseconds, for the fetching of  vendor consents |
+
 <a name="ConsentStringFetcher._fireCallback"></a>
 
 ### ConsentStringFetcher._fireCallback(type, data)
@@ -161,7 +228,7 @@ Check if an object has a property
 <a name="CMPConsentData"></a>
 
 ## CMPConsentData : <code>Object</code>
-GDPR consent data
+GDPR consent data (from getConsentData)
 
 **Kind**: global typedef  
 **Properties**
@@ -169,8 +236,23 @@ GDPR consent data
 | Name | Type | Description |
 | --- | --- | --- |
 | consentData | <code>String</code> | GDPR consent string |
-| gdprApplies | <code>Boolean</code> | Whether GDPR applies in the current context |
+| gdprApplies | <code>Boolean</code> | Whether GDPR applies in the current context or not |
 | hasGlobalScope | <code>Boolean</code> | "true if the vendor consent data is retrieved from the global cookie, false if from a publisher-specific (or publisher-group-specific) cookie" |
+
+<a name="CMPVendorConsentsData"></a>
+
+## CMPVendorConsentsData : <code>Object</code>
+GDPR vendor consents (from getVendorConsents)
+
+**Kind**: global typedef  
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| gdprApplies | <code>Boolean</code> | Whether GDPR applies in the current context or not |
+| hasGlobalScope | <code>Boolean</code> | "true if the vendor consent data is retrieved from the global cookie, false if from a publisher-specific (or publisher-group-specific) cookie" |
+| purposeConsents | <code>Object</code> | Key-value object with purpose consent statuses. Key is vendor ID, value is true/false for consent. |
+| vendorConsents | <code>Object</code> | Key-value object with vendor consent statuses. Key is vendor ID, value is true/false for consent. |
 
 <a name="OnMethodReturnValue"></a>
 
