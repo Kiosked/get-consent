@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v0.2.2
+_2018-09-28_
+
+ * Remove `p-timeout` dependency
+
 ## v0.2.1
 _2018-09-28_
 
