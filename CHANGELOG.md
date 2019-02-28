@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v0.2.3
+_2019-02-28_
+
+ * **Bugfix**: Adding multiple `fetcher.on(/* ... */)` listeners would result in some callbacks _not_ being fired
+
 ## v0.2.2
 _2018-09-28_
 
