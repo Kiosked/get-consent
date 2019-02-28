@@ -7,7 +7,7 @@ const CALLBACKS = ["cmpDetected", "consentData", "consentString", "vendorConsent
  * Timing values for checking if the __cmp() method is available
  * @private
  */
-const CMP_CHECK_TIMINGS = [0, 50, 100, "2x200", "3x300", "10x500", "10x750", 1000];
+const CMP_CHECK_TIMINGS = [0, "4x25", "4x50", "5x100", "2x200", "3x300", "10x500", "10x750", 1000];
 
 /**
  * GDPR consent data (from getConsentData)
@@ -286,7 +286,7 @@ export default class ConsentStringFetcher {
         if (!this._callbacks[type]) {
             throw new Error(`Failed firing callbacks: Unrecognised callback type: ${type}`);
         }
-        this._callbacks[type].forEach(cb => {
+        [...this._callbacks[type]].forEach(cb => {
             try {
                 cb(data);
             } catch (err) {

@@ -5,7 +5,10 @@ function timeoutPromise(promise, timeout, errorMsg) {
                 clearTimeout(timer);
                 resolve(result);
             })
-            .catch(reject);
+            .catch(err => {
+                clearTimeout(timer);
+                reject(err);
+            });
         const timer = setTimeout(() => {
             const err = new Error(errorMsg);
             err.name = "TimeoutError";

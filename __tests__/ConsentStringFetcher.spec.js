@@ -59,7 +59,7 @@ describe("ConsentStringFetcher", function() {
             win.__cmp = undefined;
         });
 
-        function mockCMP(success = true) {
+        function mockCMP(success = true, delay = 0) {
             win.__cmp = sinon.stub().callsFake((meth, param, cb) => {
                 setTimeout(() => {
                     if (success) {
@@ -73,7 +73,7 @@ describe("ConsentStringFetcher", function() {
                     } else {
                         cb(null, false);
                     }
-                }, 0);
+                }, delay);
             });
         }
 
@@ -170,7 +170,7 @@ describe("ConsentStringFetcher", function() {
             });
         });
 
-        describe("waitForConsent", function() {
+        describe("waitForConsentString", function() {
             it("provides consent string", function() {
                 const work = consentFetcher.waitForConsentString();
                 setTimeout(mockCMP, 100);
@@ -188,6 +188,24 @@ describe("ConsentStringFetcher", function() {
                     .catch(err => {
                         expect(err.name).toBe("TimeoutError");
                     });
+            });
+
+            it("provides consent string to all callers", function() {
+                const work = [
+                    consentFetcher.waitForConsentString(250),
+                    consentFetcher.waitForConsentString(200)
+                ];
+                mockCMP(true, 100);
+                work.push(
+                    consentFetcher.waitForConsentString(200),
+                    consentFetcher.waitForConsentString(250)
+                );
+                return Promise.all(work).then(responses => {
+                    expect(responses).toHaveLength(4);
+                    responses.forEach(str => {
+                        expect(str).toEqual(SAMPLE_CONSENT_DATA.consentData);
+                    });
+                });
             });
         });
 
