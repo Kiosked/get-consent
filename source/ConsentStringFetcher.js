@@ -5,7 +5,9 @@ const CALLBACKS = [
     "cmpDetected",
     "consentData",
     "consentString",
+    "googleConsent",
     "noConsentData",
+    "noGoogleConsent",
     "vendorConsentsData"
 ];
 
@@ -77,7 +79,7 @@ function initFetcher(fetcher) {
                     return;
                 }
                 if (!wasSuccessful || !consentPayloadValid(consentPayload)) {
-                    this._lastConsentData = false;
+                    fetcher._lastConsentData = false;
                     fetcher._fireCallback("noConsentData", null);
                     return;
                 }
@@ -92,6 +94,18 @@ function initFetcher(fetcher) {
                 fetcher._lastVendorConsentsData = Object.assign({}, vendorConsentsPayload);
                 fetcher._fireCallback("vendorConsentsData", fetcher._lastVendorConsentsData);
             });
+            try {
+                win.__cmp("getGooglePersonalization", (consentData, wasSuccessful) => {
+                    if (!wasSuccessful) {
+                        fetcher._googleConsent = false;
+                        fetcher._fireCallback("noGoogleConsent", null);
+                        return;
+                    }
+                    fetcher._googleConsent =
+                        consentData.googlePersonalizationData.consentValue === 1;
+                    fetcher._fireCallback("googleConsent", fetcher._googleConsent);
+                });
+            } catch (err) {}
         }
     };
     fetcher._timer = timer = startTimer(checkCMP, CMP_CHECK_TIMINGS);
@@ -125,6 +139,7 @@ export default class ConsentStringFetcher {
         this._window = win;
         this._lastConsentData = null;
         this._lastVendorConsentsData = null;
+        this._googleConsent = null;
         this._cmpDetected = false;
         this._callbacks = CALLBACKS.reduce((out, cbName) => ({ ...out, [cbName]: [] }), {});
         this._alive = true;
@@ -256,7 +271,7 @@ export default class ConsentStringFetcher {
      * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
      *  a consent string
      * @returns {Promise.<String>} Promise that resolves with a consent string
-     *  from the CMP system.
+     *  from the CMP system
      * @see waitForConsent
      * @memberof ConsentStringFetcher
      * @throws {TimeoutError} Throws a timeout error if the timeout is
@@ -264,6 +279,37 @@ export default class ConsentStringFetcher {
      */
     waitForConsentString(timeout) {
         return this.waitForConsent(timeout).then(data => data.consentData);
+    }
+
+    /**
+     * Wait for a consent state for Google personalized ads
+     * @param {Number|null=} timeout Timeout, in milliseconds, for the fetching of
+     *  a consent string
+     * @returns {Promise.<Boolean>} Promise that resolves with a consent status from
+     *  a supporting CMP system (eg. Quantcast)
+     * @memberof ConsentStringFetcher
+     * @throws {TimeoutError} Throws a timeout error if the timeout is
+     *  specified and it is reached
+     */
+    waitForGoogleConsent(timeout = null) {
+        const work = new Promise((resolve, reject) => {
+            if (typeof this._googleConsent === "boolean") {
+                return resolve(this._googleConsent);
+            }
+            const { remove: removeOnGoogleConsent } = this.on("googleConsent", hasConsent => {
+                removeOnGoogleConsent();
+                removeOnNoGoogleConsent();
+                resolve(hasConsent);
+            });
+            const { remove: removeOnNoGoogleConsent } = this.on("noGoogleConsent", () => {
+                removeOnGoogleConsent();
+                removeOnNoGoogleConsent();
+                reject(new Error("No consent data available"));
+            });
+        });
+        return timeout === null
+            ? work
+            : timeoutPromise(work, timeout, "Timed out waiting for consent");
     }
 
     /**
