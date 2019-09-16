@@ -45,6 +45,7 @@
     * [.waitForCMP(timeout)](#ConsentStringFetcher.waitForCMP) ⇒ <code>Promise</code>
     * [.waitForConsent(timeout)](#ConsentStringFetcher.waitForConsent) ⇒ [<code>Promise.&lt;CMPConsentData&gt;</code>](#CMPConsentData)
     * [.waitForConsentString(timeout)](#ConsentStringFetcher.waitForConsentString) ⇒ <code>Promise.&lt;String&gt;</code>
+    * [.waitForGoogleConsent(timeout)](#ConsentStringFetcher.waitForGoogleConsent) ⇒ <code>Promise.&lt;Boolean&gt;</code>
     * [.waitForVendorConsents(timeout)](#ConsentStringFetcher.waitForVendorConsents) ⇒ [<code>Promise.&lt;CMPVendorConsentsData&gt;</code>](#CMPVendorConsentsData)
     * [._fireCallback(type, data)](#ConsentStringFetcher._fireCallback)
 
@@ -166,7 +167,7 @@ Wait for a consent string
 
 **Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
 **Returns**: <code>Promise.&lt;String&gt;</code> - Promise that resolves with a consent string
- from the CMP system.  
+ from the CMP system  
 **Throws**:
 
 - <code>TimeoutError</code> Throws a timeout error if the timeout is
@@ -177,6 +178,24 @@ Wait for a consent string
 | Param | Type | Description |
 | --- | --- | --- |
 | timeout | <code>Number</code> \| <code>null</code> | Timeout, in milliseconds, for the fetching of  a consent string |
+
+<a name="ConsentStringFetcher.waitForGoogleConsent"></a>
+
+### ConsentStringFetcher.waitForGoogleConsent(timeout) ⇒ <code>Promise.&lt;Boolean&gt;</code>
+Wait for a consent state for Google personalized ads
+
+**Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  
+**Returns**: <code>Promise.&lt;Boolean&gt;</code> - Promise that resolves with a consent status from
+ a supporting CMP system (eg. Quantcast)  
+**Throws**:
+
+- <code>TimeoutError</code> Throws a timeout error if the timeout is
+ specified and it is reached
+
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| timeout | <code>Number</code> \| <code>null</code> | <code></code> | Timeout, in milliseconds, for the fetching of  a consent string |
 
 <a name="ConsentStringFetcher.waitForVendorConsents"></a>
 
@@ -198,7 +217,7 @@ Wait for vendor consents (getVendorConsents)
 
 <a name="ConsentStringFetcher._fireCallback"></a>
 
-### ConsentStringFetcher._fireCallback(type, data)
+### ConsentStringFetcher.\_fireCallback(type, data)
 Fire a callback
 
 **Kind**: static method of [<code>ConsentStringFetcher</code>](#ConsentStringFetcher)  

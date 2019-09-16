@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v0.3.0
+_2019-09-16_
+
+ * Google consent detection via `waitForGoogleConsent`
+
 ## v0.2.3
 _2019-02-28_
 
