@@ -1,6 +1,6 @@
 {
   "name": "get-consent",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "GDPR consent string fetcher",
   "main": "dist/get-consent.min.js",
   "scripts": {
