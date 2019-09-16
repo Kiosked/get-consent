@@ -74,7 +74,7 @@ It's possible to fetch individual vendor consent flags using this library:
 ```javascript
 import { ConsentStringFetcher } from "get-consent";
 
-const fetcher = new ConsentStringFetcher(myWin);
+const fetcher = new ConsentStringFetcher();
 
 fetcher.on("vendorConsentsData", data => {
     // {
@@ -97,6 +97,24 @@ fetcher.on("vendorConsentsData", data => {
 fetcher.waitForVendorConsents().then(data => {
     const hasConsent = !!data.vendorConsents[VENDORID.toString(10)];
 });
+```
+
+### Google Consent
+`get-consent` can also detect consent for Google ads, if the current CMP supports it. So far this feature has only been tested to work with Quantcast's CMP.
+
+```javascript
+import { ConsentStringFetcher } from "get-consent";
+
+const fetcher = new ConsentStringFetcher();
+
+fetcher.waitForGoogleConsent(250)
+    .then(hasConsent => {
+        // hasConsent is a boolean, where `true` indicates consent
+    })
+    .catch(err => {
+        // The CMP either doesnt support Google consent or the request
+        // timed out
+    });
 ```
 
 ### Timeouts
