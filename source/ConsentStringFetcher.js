@@ -1,7 +1,13 @@
 import { startTimer, stopTimer } from "./timer.js";
 import { timeoutPromise } from "./timeout.js";
 
-const CALLBACKS = ["cmpDetected", "consentData", "consentString", "vendorConsentsData"];
+const CALLBACKS = [
+    "cmpDetected",
+    "consentData",
+    "consentString",
+    "noConsentData",
+    "vendorConsentsData"
+];
 
 /**
  * Timing values for checking if the __cmp() method is available
@@ -71,6 +77,8 @@ function initFetcher(fetcher) {
                     return;
                 }
                 if (!wasSuccessful || !consentPayloadValid(consentPayload)) {
+                    this._lastConsentData = false;
+                    fetcher._fireCallback("noConsentData", null);
                     return;
                 }
                 fetcher._lastConsentData = Object.assign({}, consentPayload);
@@ -220,13 +228,22 @@ export default class ConsentStringFetcher {
      *  specified and it is reached
      */
     waitForConsent(timeout = null) {
-        const work = new Promise(resolve => {
+        if (this._lastConsentData === false) {
+            return Promise.reject(new Error("No consent data available"));
+        }
+        const work = new Promise((resolve, reject) => {
             if (this.consentData) {
                 return resolve(this.consentData);
             }
-            const { remove } = this.on("consentData", data => {
-                remove();
+            const { remove: removeOnConsentData } = this.on("consentData", data => {
+                removeOnConsentData();
+                removeOnNoConsent();
                 resolve(data);
+            });
+            const { remove: removeOnNoConsent } = this.on("noConsentData", () => {
+                removeOnConsentData();
+                removeOnNoConsent();
+                reject(new Error("No consent data available"));
             });
         });
         return timeout === null
