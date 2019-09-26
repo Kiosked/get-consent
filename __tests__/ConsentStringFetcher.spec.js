@@ -56,7 +56,11 @@ describe("ConsentStringFetcher", function() {
             };
 
         beforeEach(function() {
-            win = {};
+            win = {
+                document: {
+                    cookie: ""
+                }
+            };
             googleConsent.googlePersonalizationData.consentValue = 1;
             consentFetcher = new ConsentStringFetcher(win);
         });
@@ -66,7 +70,7 @@ describe("ConsentStringFetcher", function() {
             win.__cmp = undefined;
         });
 
-        function mockCMP(success = true, delay = 0) {
+        function mockCMP(success = true, delay = 0, useQuantcast = true) {
             win.__cmp = sinon.stub().callsFake((meth, paramOrCB, cb) => {
                 setTimeout(() => {
                     if (success) {
@@ -75,7 +79,9 @@ describe("ConsentStringFetcher", function() {
                         } else if (meth === "getVendorConsents") {
                             cb(SAMPLE_VENDOR_CONSENTS);
                         } else if (meth === "getGooglePersonalization") {
-                            paramOrCB(googleConsent, true);
+                            if (useQuantcast) {
+                                paramOrCB(googleConsent, true);
+                            }
                         } else {
                             throw new Error(`Unsupported/Unmocked __cmp method in tests: ${meth}`);
                         }
@@ -219,41 +225,69 @@ describe("ConsentStringFetcher", function() {
         });
 
         describe("waitForGoogleConsent", function() {
-            it("provides consent state (consent given)", function() {
-                const work = consentFetcher.waitForGoogleConsent();
-                setTimeout(mockCMP, 100);
-                return work.then(hasConsent => {
-                    expect(hasConsent).toEqual(true);
-                });
-            });
-
-            it("provides consent state (no consent)", function() {
-                googleConsent.googlePersonalizationData.consentValue = 0;
-                const work = consentFetcher.waitForGoogleConsent();
-                setTimeout(mockCMP, 100);
-                return work.then(hasConsent => {
-                    expect(hasConsent).toEqual(false);
-                });
-            });
-
-            it("fires after CMP data has been fetched", function() {
-                mockCMP();
-                return sleep(150)
-                    .then(() => consentFetcher.waitForGoogleConsent())
-                    .then(hasConsent => {
+            describe("using Quantcast CMP", function() {
+                it("provides consent state (consent given)", function() {
+                    const work = consentFetcher.waitForGoogleConsent();
+                    setTimeout(mockCMP, 100);
+                    return work.then(hasConsent => {
                         expect(hasConsent).toEqual(true);
                     });
+                });
+
+                it("provides consent state (no consent)", function() {
+                    googleConsent.googlePersonalizationData.consentValue = 0;
+                    const work = consentFetcher.waitForGoogleConsent();
+                    setTimeout(mockCMP, 100);
+                    return work.then(hasConsent => {
+                        expect(hasConsent).toEqual(false);
+                    });
+                });
+
+                it("fires after CMP data has been fetched", function() {
+                    mockCMP();
+                    return sleep(150)
+                        .then(() => consentFetcher.waitForGoogleConsent())
+                        .then(hasConsent => {
+                            expect(hasConsent).toEqual(true);
+                        });
+                });
+
+                it("throws a TimeoutError if timeout reached", function() {
+                    return consentFetcher
+                        .waitForGoogleConsent(100)
+                        .then(() => {
+                            throw new Error("Should have timed out");
+                        })
+                        .catch(err => {
+                            expect(err.name).toBe("TimeoutError");
+                        });
+                });
             });
 
-            it("throws a TimeoutError if timeout reached", function() {
-                return consentFetcher
-                    .waitForGoogleConsent(100)
-                    .then(() => {
-                        throw new Error("Should have timed out");
-                    })
-                    .catch(err => {
-                        expect(err.name).toBe("TimeoutError");
+            describe("using SourcePoint CMP", function() {
+                it("provides consent state (consent given)", function() {
+                    win.document.cookie =
+                        "firstSessionDate=Wed, 28 Aug 2019 10:32:49 GMT; _sp_enable_dfp_personalized_ads=true; sessionNumber=2";
+                    const work = consentFetcher.waitForGoogleConsent();
+                    setTimeout(() => {
+                        mockCMP(true, undefined, false);
+                    }, 100);
+                    return work.then(hasConsent => {
+                        expect(hasConsent).toEqual(true);
                     });
+                });
+
+                it("provides consent state (no consent)", function() {
+                    win.document.cookie =
+                        "firstSessionDate=Wed, 28 Aug 2019 10:32:49 GMT; _sp_enable_dfp_personalized_ads=false; sessionNumber=2";
+                    const work = consentFetcher.waitForGoogleConsent();
+                    setTimeout(() => {
+                        mockCMP(true, undefined, false);
+                    }, 100);
+                    return work.then(hasConsent => {
+                        expect(hasConsent).toEqual(false);
+                    });
+                });
             });
         });
 

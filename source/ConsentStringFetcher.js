@@ -69,6 +69,32 @@ function hasProperty(obj, propertyName) {
 function initFetcher(fetcher) {
     const win = fetcher._window;
     let timer;
+    const checkGoogleConsent = () => {
+        // SourcePoint CMP: https://help.sourcepoint.com/en/articles/2322023-strategies-to-manage-dfp-tag-firing-for-consent
+        try {
+            if (/_sp_enable_dfp_personalized_ads/.test(win.document.cookie)) {
+                fetcher._googleConsent = /_sp_enable_dfp_personalized_ads=true/.test(
+                    win.document.cookie
+                );
+                fetcher._fireCallback("googleConsent", fetcher._googleConsent);
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        try {
+            // Quantcast CMP
+            win.__cmp("getGooglePersonalization", (consentData, wasSuccessful) => {
+                if (!wasSuccessful) {
+                    fetcher._googleConsent = false;
+                    fetcher._fireCallback("noGoogleConsent", null);
+                    return;
+                }
+                fetcher._googleConsent = consentData.googlePersonalizationData.consentValue === 1;
+                fetcher._fireCallback("googleConsent", fetcher._googleConsent);
+            });
+        } catch (err) {}
+    };
     const checkCMP = () => {
         if (typeof win.__cmp === "function") {
             fetcher._cmpDetected = true;
@@ -94,18 +120,7 @@ function initFetcher(fetcher) {
                 fetcher._lastVendorConsentsData = Object.assign({}, vendorConsentsPayload);
                 fetcher._fireCallback("vendorConsentsData", fetcher._lastVendorConsentsData);
             });
-            try {
-                win.__cmp("getGooglePersonalization", (consentData, wasSuccessful) => {
-                    if (!wasSuccessful) {
-                        fetcher._googleConsent = false;
-                        fetcher._fireCallback("noGoogleConsent", null);
-                        return;
-                    }
-                    fetcher._googleConsent =
-                        consentData.googlePersonalizationData.consentValue === 1;
-                    fetcher._fireCallback("googleConsent", fetcher._googleConsent);
-                });
-            } catch (err) {}
+            checkGoogleConsent();
         }
     };
     fetcher._timer = timer = startTimer(checkCMP, CMP_CHECK_TIMINGS);
