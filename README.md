@@ -6,6 +6,12 @@
 ## About
 **Get-Consent** is a helper library to make collecting GDPR consent data from CMPs easier. Consent data is typically collected from a [`window.__cmp()` function call](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/CMP%20JS%20API%20v1.1%20Final.md#what-api-will-need-to-be-provided-by-the-cmp-) by providing certain parameters. This is tedious as the function may arrive (be assigned and ready) later, or may never arrive at all. This library wraps a smart interface around the `__cmp()` call for fetching consent so that you don't have to worry about the details.
 
+### Google Personalization
+Get-Consent also recognises Google consent for use with personalized ads. Currently the following CMPs are recognised and supported:
+
+ * [Quantcast](https://www.quantcast.com/blog/quantcast-choice-your-solution-for-gdpr-consent/) (**recommended**)
+ * [SourcePoint](https://www.sourcepoint.com/cmp/)
+
 ## Installation
 
 ```shell
@@ -100,7 +106,7 @@ fetcher.waitForVendorConsents().then(data => {
 ```
 
 ### Google Consent
-`get-consent` can also detect consent for Google ads, if the current CMP supports it. So far this feature has only been tested to work with Quantcast's CMP.
+`get-consent` can also detect consent for Google ads, if the current CMP supports it.
 
 ```javascript
 import { ConsentStringFetcher } from "get-consent";
