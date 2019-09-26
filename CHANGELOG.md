@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v0.4.0
+_2019-09-26_
+
+ * SourcePoint CMP support for Google consent
+
 ## v0.3.0
 _2019-09-16_
 
