@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v0.5.0
+_2019-10-16_
+
+ * `NoConsentError` for handling failures where consent is not available from the CMP
+
 ## v0.4.0
 _2019-09-26_
 

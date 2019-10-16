@@ -154,6 +154,8 @@ Wait for consent data
 
 - <code>TimeoutError</code> Throws a timeout error if the timeout is
  specified and it is reached
+- <code>NoConsentError</code> Throws a no-consent error if the CMP responds and
+ the consent information is not available
 
 
 | Param | Type | Default | Description |
@@ -172,6 +174,8 @@ Wait for a consent string
 
 - <code>TimeoutError</code> Throws a timeout error if the timeout is
  specified and it is reached
+- <code>NoConsentError</code> Throws a no-consent error if the CMP responds and
+ the consent information is not available
 
 **See**: waitForConsent  
 
