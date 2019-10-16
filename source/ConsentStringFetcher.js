@@ -256,10 +256,14 @@ export default class ConsentStringFetcher {
      * @memberof ConsentStringFetcher
      * @throws {TimeoutError} Throws a timeout error if the timeout is
      *  specified and it is reached
+     * @throws {NoConsentError} Throws a no-consent error if the CMP responds and
+     *  the consent information is not available
      */
     waitForConsent(timeout = null) {
         if (this._lastConsentData === false) {
-            return Promise.reject(new Error("No consent data available"));
+            const err = new Error("No consent data available");
+            err.name = "NoConsentError";
+            return Promise.reject(err);
         }
         const work = new Promise((resolve, reject) => {
             if (this.consentData) {
@@ -273,7 +277,9 @@ export default class ConsentStringFetcher {
             const { remove: removeOnNoConsent } = this.on("noConsentData", () => {
                 removeOnConsentData();
                 removeOnNoConsent();
-                reject(new Error("No consent data available"));
+                const err = new Error("No consent data available");
+                err.name = "NoConsentError";
+                reject(err);
             });
         });
         return timeout === null
@@ -291,6 +297,8 @@ export default class ConsentStringFetcher {
      * @memberof ConsentStringFetcher
      * @throws {TimeoutError} Throws a timeout error if the timeout is
      *  specified and it is reached
+     * @throws {NoConsentError} Throws a no-consent error if the CMP responds and
+     *  the consent information is not available
      */
     waitForConsentString(timeout) {
         return this.waitForConsent(timeout).then(data => data.consentData);
@@ -319,7 +327,9 @@ export default class ConsentStringFetcher {
             const { remove: removeOnNoGoogleConsent } = this.on("noGoogleConsent", () => {
                 removeOnGoogleConsent();
                 removeOnNoGoogleConsent();
-                reject(new Error("No consent data available"));
+                const err = new Error("No consent data available");
+                err.name = "NoConsentError";
+                reject(err);
             });
         });
         return timeout === null
