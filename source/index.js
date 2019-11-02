@@ -1,3 +1,10 @@
-import ConsentStringFetcher from "./ConsentStringFetcher.js";
-
-export { ConsentStringFetcher };
+export {
+    getConsentData,
+    getConsentString,
+    getGoogleConsent,
+    getVendorConsentData,
+    onConsentData,
+    onConsentString,
+    onGoogleConsent,
+    onVendorConsent
+} from "./accessors.js";

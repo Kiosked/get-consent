@@ -1,4 +1,4 @@
-function timeoutPromise(promise, timeout, errorMsg) {
+export function timeoutPromise(promise, timeout, errorMsg = "Timed-out waiting for result") {
     return new Promise((resolve, reject) => {
         promise
             .then(result => {
@@ -16,7 +16,3 @@ function timeoutPromise(promise, timeout, errorMsg) {
         }, timeout);
     });
 }
-
-module.exports = {
-    timeoutPromise
-};

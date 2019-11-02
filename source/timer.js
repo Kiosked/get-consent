@@ -2,7 +2,7 @@ export function expandTimings(timings) {
     if (typeof timings === "number") {
         return timings;
     } else if (!Array.isArray) {
-        throw new Error(`Failed expanding timer timings: Value not a number or array: ${timings}`);
+        throw new Error(`Failed expanding timings: Value not a number or array: ${timings}`);
     }
     const computedTimings = [];
     timings.forEach(raw => {
@@ -13,7 +13,7 @@ export function expandTimings(timings) {
         const [count, delay] = raw.split(/x/i);
         if (!count || count <= 0 || !/^\d+$/.test(delay)) {
             throw new Error(
-                `Failed expanding raw timings: Expected (count)x(delay), got: ${count}x${delay}`
+                `Failed expanding timings: Expected (count)x(delay), got: ${count}x${delay}`
             );
         }
         for (let i = 0; i < parseInt(count, 10); i += 1) {
