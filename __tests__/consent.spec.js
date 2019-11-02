@@ -1,5 +1,11 @@
 import sinon from "sinon";
-import { waitForConsentData } from "../source/consent.js";
+import {
+    isCMPPing,
+    isConsentPayload,
+    isGooglePayload,
+    isVendorPayload,
+    waitForConsentData
+} from "../source/consent.js";
 import consentData from "./consent.json";
 import vendorData from "./vendorConsents.json";
 import googleConsentData from "./googleConsent.json";
@@ -12,18 +18,43 @@ googleConsentData.googlePersonalizationData.lastUpdated = new Date(
 );
 
 describe("consent", function() {
-    describe("waitForConsentData", function() {
-        let win;
+    describe("isCMPPing", function() {
+        it("recognises a ping response", function() {
+            expect(
+                isCMPPing({
+                    gdprAppliesGlobally: false,
+                    cmpLoaded: true
+                })
+            ).toBe(true);
+        });
+    });
 
+    describe("isConsentPayload", function() {
+        it("recognises a consent response", function() {
+            expect(isConsentPayload(consentData)).toBe(true);
+        });
+    });
+
+    describe("isGooglePayload", function() {
+        it("recognises a Google consent response", function() {
+            expect(isGooglePayload(googleConsentData)).toBe(true);
+        });
+    });
+
+    describe("isVendorPayload", function() {
+        it("recognises a vendor response", function() {
+            expect(isVendorPayload(vendorData)).toBe(true);
+        });
+    });
+
+    describe("waitForConsentData", function() {
         describe("using standard window reference", function() {
-            let cmpSpy;
+            let win;
 
             beforeEach(function() {
                 const time = 150;
-                cmpSpy = sinon.spy();
                 win = {
-                    __cmp: (a, b, c) => {
-                        cmpSpy(a, b, c);
+                    __cmp: sinon.stub().callsFake((a, b, c) => {
                         if (a === "getConsentData") {
                             setTimeout(() => {
                                 c(consentData, true);
@@ -41,7 +72,7 @@ describe("consent", function() {
                             return;
                         }
                         throw new Error("Unknown CMP command");
-                    },
+                    }),
                     addEventListener: sinon.spy(),
                     postMessage: sinon.spy(),
                     removeEventListener: sinon.spy()
@@ -53,6 +84,161 @@ describe("consent", function() {
                 it("returns expected data", function() {
                     return waitForConsentData({ win }).then(res => {
                         expect(res).toEqual(consentData);
+                    });
+                });
+
+                it("calls __cmp with expected parameters", function() {
+                    return waitForConsentData({ win }).then(res => {
+                        expect(win.__cmp.calledWith("getConsentData", null)).toBe(true);
+                        expect(typeof win.__cmp.firstCall.args[2]).toBe("function");
+                    });
+                });
+            });
+
+            describe("requesting getVendorConsents", function() {
+                it("returns expected data", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getVendorConsents",
+                        validate: isVendorPayload,
+                        win
+                    }).then(res => {
+                        expect(res).toEqual(vendorData);
+                    });
+                });
+
+                it("calls __cmp with expected parameters", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getVendorConsents",
+                        validate: isVendorPayload,
+                        win
+                    }).then(res => {
+                        expect(win.__cmp.calledWith("getVendorConsents", null)).toBe(true);
+                        expect(typeof win.__cmp.firstCall.args[2]).toBe("function");
+                    });
+                });
+            });
+
+            describe("requesting getGooglePersonalization", function() {
+                it("returns expected data", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getGooglePersonalization",
+                        cmpParam: false,
+                        validate: isGooglePayload,
+                        win
+                    }).then(res => {
+                        expect(res).toEqual(googleConsentData);
+                    });
+                });
+
+                it("calls __cmp with expected parameters", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getGooglePersonalization",
+                        cmpParam: false,
+                        validate: isGooglePayload,
+                        win
+                    }).then(res => {
+                        expect(win.__cmp.calledWith("getGooglePersonalization")).toBe(true);
+                        expect(typeof win.__cmp.firstCall.args[1]).toBe("function");
+                    });
+                });
+            });
+        });
+
+        describe("using postMessage", function() {
+            let win;
+
+            beforeEach(function() {
+                const time = 100;
+                const messageHandlers = [];
+                win = {
+                    addEventListener: sinon.stub().callsFake((name, cb) => {
+                        if (name === "message") {
+                            messageHandlers.push(cb);
+                        }
+                    }),
+                    postMessage: sinon.stub().callsFake(msg => {
+                        setTimeout(() => {
+                            messageHandlers.forEach(hndlr =>
+                                hndlr({
+                                    data: msg
+                                })
+                            );
+                        }, time);
+                        try {
+                            const payload = typeof msg === "string" ? JSON.parse(msg) : msg;
+                            if (payload.__cmp) {
+                                switch (payload.__cmp.command) {
+                                    case "ping":
+                                        win.postMessage(
+                                            JSON.stringify({
+                                                __cmpReturn: {
+                                                    returnValue: {
+                                                        gdprAppliesGlobally: false,
+                                                        cmpLoaded: true
+                                                    },
+                                                    success: true
+                                                }
+                                            })
+                                        );
+                                        break;
+                                    case "getConsentData":
+                                        win.postMessage(
+                                            JSON.stringify({
+                                                __cmpReturn: {
+                                                    returnValue: consentData,
+                                                    success: true
+                                                }
+                                            })
+                                        );
+                                        break;
+                                    case "getVendorConsents":
+                                        win.postMessage(
+                                            JSON.stringify({
+                                                __cmpReturn: {
+                                                    returnValue: vendorData,
+                                                    success: true
+                                                }
+                                            })
+                                        );
+                                        break;
+                                    default:
+                                        throw new Error(
+                                            `Unspecified CMP command: ${payload.__cmp.command}`
+                                        );
+                                }
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }),
+                    removeEventListener: sinon.stub().callsFake((name, cb) => {
+                        if (name === "message") {
+                            const ind = messageHandlers.indexOf(cb);
+                            if (ind >= 0) {
+                                messageHandlers.splice(ind, 1);
+                            }
+                        }
+                    })
+                };
+                win.top = win;
+            });
+
+            describe("requesting getConsentData (default)", function() {
+                it("returns expected data", function() {
+                    return waitForConsentData({ win }).then(res => {
+                        expect(res).toEqual(consentData);
+                    });
+                });
+            });
+
+            describe("requesting getVendorConsents", function() {
+                it("returns expected data", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getVendorConsents",
+                        validate: isVendorPayload,
+                        win
+                    }).then(res => {
+                        expect(res).toEqual(vendorData);
                     });
                 });
             });
