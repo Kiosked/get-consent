@@ -2,18 +2,20 @@ import { waitForConsentData } from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
 
 export function getConsentData(options = {}) {
-    const { noConsent = "reject", timeout = null, type = "" } = options;
+    const { noConsent = "reject", timeout = null, type = "", win = window } = options;
     let consentPromise;
     if (type === "google") {
         consentPromise = waitForConsentData({
             cmpCmd: "getGooglePersonalization",
             cmpParam: undefined,
-            validate: false
+            validate: false,
+            win
         });
     } else if (type === "vendor" || type === "vendors") {
         consentPromise = waitForConsentData({
             cmpCmd: "getVendorConsents",
-            validate: false
+            validate: false,
+            win
         });
     } else {
         consentPromise = waitForConsentData();
@@ -57,7 +59,7 @@ export function getVendorConsentData(options) {
     ).then(result => (result ? result.consentData : result));
 }
 
-export function onConsentData(cb, type = "") {
+export function onConsentData(cb, type = "", win = window) {
     let live = true;
     getConsentData()
         .then(data => {
@@ -77,19 +79,19 @@ export function onConsentData(cb, type = "") {
     };
 }
 
-export function onConsentString(cb) {
+export function onConsentString(cb, win = window) {
     return onConsentData(data => {
         cb(null, data.consentData);
     });
 }
 
-export function onGoogleConsent(cb) {
+export function onGoogleConsent(cb, win = window) {
     return onConsentData(data => {
         cb(null, data.consentData);
     }, "google");
 }
 
-export function onVendorConsent(cb) {
+export function onVendorConsent(cb, win = window) {
     return onConsentData(data => {
         cb(null, data.consentData);
     }, "vendor");
