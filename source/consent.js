@@ -1,6 +1,44 @@
 import { startTimer, stopTimer } from "./timer.js";
 
 /**
+ * @typedef {Object} ConsentPayload
+ * @property {String} consentData Consent string for the user
+ * @property {Boolean} gdprApplies Whether or not GDPR consent applies for
+ *  this particular user
+ * @property {Boolean} hasGlobalConsent ?
+ * @property {Boolean} hasGlobalScope Whether or not the publisher is
+ *  participating in the global scope for the IAB's consent framework
+ */
+
+/**
+ * @typedef {Object} VendorConsentPayload
+ * @property {Boolean} gdprApplies Whether or not GDPR consent applies for
+ *  this particular user
+ * @property {Boolean} hasGlobalConsent ?
+ * @property {Boolean} hasGlobalScope Whether or not the publisher is
+ *  participating in the global scope for the IAB's consent framework
+ * @property {String} metadata Base64 encoded header information
+ * @property {Object.<String, Boolean>} purposeConsents Key-value list of
+ *  purposes that the user has consented to. Key is a purpose ID, value
+ *  is whether or not consent was granted.
+ * @property {Object.<String, Boolean>} vendorConsents Key-value list of
+ *  vendor IDs that the user has consented to
+ */
+
+/**
+ * @typedef {Object} GoogleConsentPayload
+ * @property {Object} googlePersonalizationData Data related to Google
+ *  personalization state
+ * @property {Number} googlePersonalizationData.consentValue Either 1 or
+ *  0, indicating whether or not Google personalization consent was
+ *  granted
+ * @property {Date} created When the consent state was created for this
+ *  user
+ * @property {Date} lastUpdated When the consent state was last updated
+ *  for this user
+ */
+
+/**
  * Timing values for checking if the __cmp() method is available
  * @private
  */
@@ -62,6 +100,21 @@ function waitForCMP() {
     return __cmpWaitPromise;
 }
 
+/**
+ * @typedef {Object} WaitForConsentDataOptions
+ * @property {String=} cmpCmd CMP command to execute (default: "getConsentData")
+ * @property {null|undefined=} cmpParam Extra parameter to send to CMP (default: null)
+ * @property {Boolean=} validate Validate CMP payload (only necessary for "getConsentData")
+ *  (default: true)
+ * @property {Window=} win Optional window reference override
+ */
+
+/**
+ * Wait for consent data from the CMP
+ * @param {WaitForConsentDataOptions=} options Options for the CMP request
+ * @returns {Promise.<ConsentPayload|VendorConsentPayload|GoogleConsentPayload>} The
+ *  requested consent data
+ */
 export function waitForConsentData(options = {}) {
     const { cmpCmd = "getConsentData", cmpParam = null, validate = true, win = window } = options;
     const winTop = win.top || win;
