@@ -62,21 +62,31 @@ function consentPayloadValid(payload) {
     return true;
 }
 
-function waitForCMP() {
+/**
+ * Check if an object has a property
+ * @param {Object} obj
+ * @param {*} propertyName
+ */
+function hasProperty(obj, propertyName) {
+    return obj.hasOwnProperty(propertyName) || Object.keys(obj).indexOf(propertyName) >= 0;
+}
+
+function waitForCMP(win = window) {
     if (__cmpWaitPromise) {
         return __cmpWaitPromise;
     }
+    const topWin = win.top;
     __cmpWaitPromise = new Promise(resolve => {
         const stopListening = () => {
             stopTimer(timer);
-            topmostWindow.removeEventListener("message", handleMsg, false);
+            win.removeEventListener("message", handleMsg, false);
         };
         const timer = startTimer(() => {
             if (typeof win.__cmp === "function") {
                 stopListening();
                 resolve("obj");
             }
-            topmostWindow.postMessage(
+            topWin.postMessage(
                 JSON.stringify({
                     __cmp: {
                         command: "ping",
@@ -95,7 +105,7 @@ function waitForCMP() {
                 resolve("msg");
             }
         };
-        topmostWindow.addEventListener("message", handleMsg, false);
+        win.addEventListener("message", handleMsg, false);
     });
     return __cmpWaitPromise;
 }
@@ -118,14 +128,14 @@ function waitForCMP() {
 export function waitForConsentData(options = {}) {
     const { cmpCmd = "getConsentData", cmpParam = null, validate = true, win = window } = options;
     const winTop = win.top || win;
-    return waitForCMP().then(
+    return waitForCMP(win).then(
         accessMethod =>
             new Promise((resolve, reject) => {
                 if (accessMethod === "obj") {
                     // CMP is in the local window/frame - make requests against the __cmp
                     // object - This is obviously the preferred approach.
                     const cmpArgs = typeof cmpParam === "undefined" ? [cmpCmd] : [cmpCmd, cmpParam];
-                    window.__cmp(...cmpArgs, (consentPayload, wasSuccessful) => {
+                    win.__cmp(...cmpArgs, (consentPayload, wasSuccessful) => {
                         const isValid = validate ? consentPayloadValid(consentPayload) : true;
                         if (!wasSuccessful || !isValid) {
                             const err = new Error("Invalid consent payload from CMP");
