@@ -57,10 +57,40 @@ export function getVendorConsentData(options) {
     ).then(result => (result ? result.consentData : result));
 }
 
-export function onConsentData(cb) {}
+export function onConsentData(cb, type = "") {
+    let live = true;
+    getConsentData()
+        .then(data => {
+            if (!live) {
+                return;
+            }
+            cb(null, data);
+        })
+        .catch(err => {
+            if (!live) {
+                return;
+            }
+            cb(err, null);
+        });
+    return () => {
+        live = false;
+    };
+}
 
-export function onConsentString(cb) {}
+export function onConsentString(cb) {
+    return onConsentData(data => {
+        cb(null, data.consentData);
+    });
+}
 
-export function onGoogleConsent(cb) {}
+export function onGoogleConsent(cb) {
+    return onConsentData(data => {
+        cb(null, data.consentData);
+    }, "google");
+}
 
-export function onVendorConsent(cb) {}
+export function onVendorConsent(cb) {
+    return onConsentData(data => {
+        cb(null, data.consentData);
+    }, "vendor");
+}
