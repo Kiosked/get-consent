@@ -1,4 +1,9 @@
-import { waitForConsentData } from "./consent.js";
+import {
+    isConsentPayload,
+    isGooglePayload,
+    isVendorPayload,
+    waitForConsentData
+} from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
 
 export function getConsentData(options = {}) {
@@ -8,17 +13,17 @@ export function getConsentData(options = {}) {
         consentPromise = waitForConsentData({
             cmpCmd: "getGooglePersonalization",
             cmpParam: undefined,
-            validate: false,
+            validate: isGooglePayload,
             win
         });
     } else if (type === "vendor" || type === "vendors") {
         consentPromise = waitForConsentData({
             cmpCmd: "getVendorConsents",
-            validate: false,
+            validate: isVendorPayload,
             win
         });
     } else {
-        consentPromise = waitForConsentData();
+        consentPromise = waitForConsentData({ win });
     }
     if (typeof timeout === "number" && timeout > 0) {
         consentPromise = timeoutPromise(
