@@ -12,7 +12,8 @@
     "prepare": "npm run build",
     "test": "npm run test:specs && npm run test:format",
     "test:format": "prettier-check '{source,__tests__}/**/*.js'",
-    "test:specs": "jest"
+    "test:specs": "jest",
+    "test:specs:watch": "jest --watchAll"
   },
   "files": [
     "dist/**/*.js",
