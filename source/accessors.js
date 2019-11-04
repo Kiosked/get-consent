@@ -92,7 +92,7 @@ export function getVendorConsentData(options) {
 
 export function onConsentData(cb, type = "", win = window) {
     let live = true;
-    getConsentData()
+    getConsentData({ type, win })
         .then(data => {
             if (!live) {
                 return;
@@ -111,19 +111,43 @@ export function onConsentData(cb, type = "", win = window) {
 }
 
 export function onConsentString(cb, win = window) {
-    return onConsentData(data => {
-        cb(null, data.consentData);
-    });
+    return onConsentData(
+        (err, data) => {
+            if (err) {
+                cb(err, null);
+                return;
+            }
+            cb(null, data.consentData);
+        },
+        "",
+        win
+    );
 }
 
 export function onGoogleConsent(cb, win = window) {
-    return onConsentData(data => {
-        cb(null, data.consentData);
-    }, "google");
+    return onConsentData(
+        (err, data) => {
+            if (err) {
+                cb(err, null);
+                return;
+            }
+            cb(null, data.googlePersonalizationData.consentValue);
+        },
+        "google",
+        win
+    );
 }
 
 export function onVendorConsent(cb, win = window) {
-    return onConsentData(data => {
-        cb(null, data.consentData);
-    }, "vendor");
+    return onConsentData(
+        (err, data) => {
+            if (err) {
+                cb(err, null);
+                return;
+            }
+            cb(null, data);
+        },
+        "vendor",
+        win
+    );
 }
