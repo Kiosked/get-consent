@@ -243,5 +243,39 @@ describe("consent", function() {
                 });
             });
         });
+
+        describe("when SourcePoint CMP is active", function() {
+            let win;
+
+            beforeEach(function() {
+                const time = 150;
+                win = {
+                    __cmp: sinon.stub().callsFake(() => {}),
+                    document: {
+                        cookie:
+                            "firstSessionDate=Wed, 28 Aug 2019 10:32:49 GMT; _sp_enable_dfp_personalized_ads=true; sessionNumber=2"
+                    },
+                    addEventListener: sinon.spy(),
+                    postMessage: sinon.spy(),
+                    removeEventListener: sinon.spy()
+                };
+                win.top = win;
+            });
+
+            describe("requesting getGooglePersonalization", function() {
+                it("returns expected data", function() {
+                    return waitForConsentData({
+                        cmpCmd: "getGooglePersonalization",
+                        cmpParam: false,
+                        validate: isGooglePayload,
+                        win
+                    }).then(res => {
+                        expect(res).toHaveProperty("googlePersonalizationData.consentValue", 1);
+                        expect(res).toHaveProperty("googlePersonalizationData.created", null);
+                        expect(res).toHaveProperty("googlePersonalizationData.lastUpdated", null);
+                    });
+                });
+            });
+        });
     });
 });

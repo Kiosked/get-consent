@@ -32,9 +32,9 @@ import { startTimer, stopTimer } from "./timer.js";
  * @property {Number} googlePersonalizationData.consentValue Either 1 or
  *  0, indicating whether or not Google personalization consent was
  *  granted
- * @property {Date} created When the consent state was created for this
+ * @property {Date} googlePersonalizationData.created When the consent state was created for this
  *  user
- * @property {Date} lastUpdated When the consent state was last updated
+ * @property {Date} googlePersonalizationData.lastUpdated When the consent state was last updated
  *  for this user
  */
 
@@ -44,6 +44,40 @@ import { startTimer, stopTimer } from "./timer.js";
  */
 const CMP_CHECK_TIMINGS = [0, "4x25", "4x50", "5x100", "2x200", "3x300", "10x500", "10x750", 1000];
 
+/**
+ * Get SourcePoint CMP Google consent status
+ * @param {Window=} win Optional window override
+ * @returns {null|Boolean} Null if no SourcePoint CMP Google consent state detected, or Boolean
+ *  if state can be retrieved
+ * @static
+ * @private
+ */
+function getSourcePointGoogleConsent(win = window) {
+    // SourcePoint CMP: https://help.sourcepoint.com/en/articles/2322023-strategies-to-manage-dfp-tag-firing-for-consent
+    if (win.document && /_sp_enable_dfp_personalized_ads/.test(win.document.cookie)) {
+        return /_sp_enable_dfp_personalized_ads=true/.test(win.document.cookie);
+    }
+    return null;
+}
+
+/**
+ * Check if an object has a property
+ * @param {Object} obj Object to check
+ * @param {String} propertyName Property name to check
+ * @returns {Boolean} True if the object contains the specified property
+ * @private
+ * @static
+ */
+function hasProperty(obj, propertyName) {
+    return obj.hasOwnProperty(propertyName) || Object.keys(obj).indexOf(propertyName) >= 0;
+}
+
+/**
+ * Check if a CMP ping payload is valid
+ * @param {Object} payload The ping response from a CMP instance
+ * @returns {Boolean}
+ * @static
+ */
 export function isCMPPing(payload) {
     if (typeof payload !== "object" || payload === null || !hasProperty(payload, "cmpLoaded")) {
         return false;
@@ -53,9 +87,8 @@ export function isCMPPing(payload) {
 
 /**
  * Check if a consent payload object is valid
- * @param {Object} payload The GDPR consent payload from a __cmp() call
+ * @param {Object|ConsentPayload} payload The GDPR consent payload from a __cmp() call
  * @returns {Boolean} True if valid, false otherwise
- * @private
  * @static
  */
 export function isConsentPayload(payload) {
@@ -67,6 +100,12 @@ export function isConsentPayload(payload) {
     return true;
 }
 
+/**
+ * Check if a Google consent payload is valid
+ * @param {Object|GoogleConsentPayload} payload The response from a CMP instance
+ * @returns {Boolean}
+ * @static
+ */
 export function isGooglePayload(payload) {
     return !!(
         payload &&
@@ -75,6 +114,12 @@ export function isGooglePayload(payload) {
     );
 }
 
+/**
+ * Check if a vendors consent payload is valid
+ * @param {Object|VendorConsentPayload} payload The response from a CMP instance
+ * @returns {Boolean}
+ * @static
+ */
 export function isVendorPayload(payload) {
     return !!(
         payload &&
@@ -84,14 +129,14 @@ export function isVendorPayload(payload) {
 }
 
 /**
- * Check if an object has a property
- * @param {Object} obj
- * @param {*} propertyName
+ * Wait for a CMP instance to appear
+ * @param {Window=} win Optional window override
+ * @returns {Promise.<String>} Returns a promise that resolves with the
+ *  type of CMP connection detected ("obj" is local window object, "msg"
+ *  is via postMessage)
+ * @static
+ * @private
  */
-function hasProperty(obj, propertyName) {
-    return obj.hasOwnProperty(propertyName) || Object.keys(obj).indexOf(propertyName) >= 0;
-}
-
 function waitForCMP(win = window) {
     if (win._cmpWaitPromise) {
         return win._cmpWaitPromise;
@@ -155,6 +200,19 @@ export function waitForConsentData(options = {}) {
         win = window
     } = options;
     const winTop = win.top || win;
+    // Special consideration: Google consent w/ SourcePoint CMP
+    if (cmpCmd === "getGooglePersonalization") {
+        const spGoogleConsent = getSourcePointGoogleConsent(win);
+        if (spGoogleConsent !== null) {
+            return Promise.resolve({
+                googlePersonalizationData: {
+                    consentValue: spGoogleConsent ? 1 : 0,
+                    created: null,
+                    lastUpdated: null
+                }
+            });
+        }
+    }
     return waitForCMP(win).then(
         accessMethod =>
             new Promise((resolve, reject) => {
