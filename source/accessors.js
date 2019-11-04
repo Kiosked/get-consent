@@ -6,6 +6,8 @@ import {
 } from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
 
+const CONSENT_EXPECTED_ERROR_NAMES = ["InvalidConsentError", "TimeoutError"];
+
 /**
  * @typedef {Object} GetConsentDataOptions
  * @property {String=} noConsent Action to take when no consent or fetching
@@ -32,7 +34,7 @@ export function getConsentData(options = {}) {
     if (type === "google") {
         consentPromise = waitForConsentData({
             cmpCmd: "getGooglePersonalization",
-            cmpParam: undefined,
+            cmpParam: false,
             validate: isGooglePayload,
             win
         });
@@ -53,7 +55,7 @@ export function getConsentData(options = {}) {
         );
     }
     return consentPromise.catch(err => {
-        if (err.name === "InvalidConsentError" && noConsent === "resolve") {
+        if (CONSENT_EXPECTED_ERROR_NAMES.indexOf(err.name) >= 0 && noConsent === "resolve") {
             return null;
         }
         throw err;
@@ -73,7 +75,11 @@ export function getGoogleConsent(options) {
         Object.assign({}, options, {
             type: "google"
         })
-    ).then(result => (result ? result.consentData : result));
+    ).then(result =>
+        result && result.googlePersonalizationData
+            ? result.googlePersonalizationData.consentValue
+            : result
+    );
 }
 
 export function getVendorConsentData(options) {
@@ -81,7 +87,7 @@ export function getVendorConsentData(options) {
         Object.assign({}, options, {
             type: "vendor"
         })
-    ).then(result => (result ? result.consentData : result));
+    );
 }
 
 export function onConsentData(cb, type = "", win = window) {
