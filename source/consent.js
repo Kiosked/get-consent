@@ -32,9 +32,9 @@ import { startTimer, stopTimer } from "./timer.js";
  * @property {Number} googlePersonalizationData.consentValue Either 1 or
  *  0, indicating whether or not Google personalization consent was
  *  granted
- * @property {Date} googlePersonalizationData.created When the consent state was created for this
+ * @property {Date|null} googlePersonalizationData.created When the consent state was created for this
  *  user
- * @property {Date} googlePersonalizationData.lastUpdated When the consent state was last updated
+ * @property {Date|null} googlePersonalizationData.lastUpdated When the consent state was last updated
  *  for this user
  */
 

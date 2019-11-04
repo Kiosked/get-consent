@@ -6,6 +6,26 @@ import {
 } from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
 
+/**
+ * @typedef {Object} GetConsentDataOptions
+ * @property {String=} noConsent Action to take when no consent or fetching
+ *  times-out. When set to "reject" (default), an error is thrown. When set
+ *  to "resolve", null is returned.
+ * @property {Number|null=} timeout Timeout in milliseconds. Defaults to
+ *  null (no timeout).
+ * @property {String=} type Type of consent data to fetch. Defaults to ""
+ *  (generic CMP consent data). Can be set to "google" for Google consent
+ *  data or "vendor" for vendors consent data.
+ * @property {Window=} win Optional window override.
+ */
+
+/**
+ * Get consent data from a CMP
+ * @param {GetConsentDataOptions=} options Options for the CMP/consent
+ *  request
+ * @returns {Promise.<null|ConsentPayload|VendorConsentPayload|GoogleConsentPayload>}
+ *  A promise that resolves with consent data, or null if appropriate
+ */
 export function getConsentData(options = {}) {
     const { noConsent = "reject", timeout = null, type = "", win = window } = options;
     let consentPromise;
