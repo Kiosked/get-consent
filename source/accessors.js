@@ -48,9 +48,11 @@ export function getConsentData(options = {}) {
         consentPromise = waitForConsentData({ win });
     }
     if (typeof timeout === "number" && timeout > 0) {
-        consentPromise = timeoutPromise(consentPromise, timeout, {
-            errorMsg: "Timed-out waiting for consent data"
-        });
+        consentPromise = timeoutPromise(
+            consentPromise,
+            timeout,
+            "Timed-out waiting for consent data"
+        );
     }
     return consentPromise.catch(err => {
         if (CONSENT_EXPECTED_ERROR_NAMES.indexOf(err.name) >= 0 && noConsent === "resolve") {
