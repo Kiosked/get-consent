@@ -8,3 +8,4 @@ export {
     onGoogleConsent,
     onVendorConsent
 } from "./accessors.js";
+export { createMem } from "./mem.js";
