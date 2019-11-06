@@ -113,9 +113,9 @@ export function getVendorConsentData(options) {
 }
 
 export function onConsentData(cb, options = {}) {
-    const { type = "", win = window } = options;
+    const { mem: memInst = createMem(), type = "", win = window } = options;
     let live = true;
-    getConsentData({ type, win })
+    getConsentData({ mem: memInst, type, win })
         .then(data => {
             if (!live) {
                 return;
