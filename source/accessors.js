@@ -5,11 +5,13 @@ import {
     waitForConsentData
 } from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
+import { createMem, mem } from "./mem.js";
 
 const CONSENT_EXPECTED_ERROR_NAMES = ["InvalidConsentError", "TimeoutError"];
 
 /**
  * @typedef {Object} GetConsentDataOptions
+ * @property {Mem=} mem Memoization collection for caching results
  * @property {String=} noConsent Action to take when no consent or fetching
  *  times-out. When set to "reject" (default), an error is thrown. When set
  *  to "resolve", null is returned.
@@ -29,28 +31,50 @@ const CONSENT_EXPECTED_ERROR_NAMES = ["InvalidConsentError", "TimeoutError"];
  *  A promise that resolves with consent data, or null if appropriate
  */
 export function getConsentData(options = {}) {
-    const { noConsent = "reject", timeout = null, type = "", win = window } = options;
+    const {
+        mem: memInst = createMem(),
+        noConsent = "reject",
+        timeout = null,
+        type = "",
+        win = window
+    } = options;
     let consentPromise;
     if (type === "google") {
-        consentPromise = waitForConsentData({
-            cmpCmd: "getGooglePersonalization",
-            cmpParam: false,
-            validate: isGooglePayload,
-            win
-        });
+        consentPromise = mem(
+            memInst,
+            waitForConsentData,
+            [
+                {
+                    cmpCmd: "getGooglePersonalization",
+                    cmpParam: false,
+                    validate: isGooglePayload,
+                    win
+                }
+            ],
+            ["getGooglePersonalization", win]
+        );
     } else if (type === "vendor" || type === "vendors") {
-        consentPromise = waitForConsentData({
-            cmpCmd: "getVendorConsents",
-            validate: isVendorPayload,
-            win
-        });
+        consentPromise = mem(
+            memInst,
+            waitForConsentData,
+            [
+                {
+                    cmpCmd: "getVendorConsents",
+                    validate: isVendorPayload,
+                    win
+                }
+            ],
+            ["getVendorConsents", win]
+        );
     } else {
-        consentPromise = waitForConsentData({ win });
+        consentPromise = mem(memInst, waitForConsentData, [{ win }], [win]);
     }
     if (typeof timeout === "number" && timeout > 0) {
-        consentPromise = timeoutPromise(consentPromise, timeout, {
-            errorMsg: "Timed-out waiting for consent data"
-        });
+        consentPromise = timeoutPromise(
+            consentPromise,
+            timeout,
+            "Timed-out waiting for consent data"
+        );
     }
     return consentPromise.catch(err => {
         if (CONSENT_EXPECTED_ERROR_NAMES.indexOf(err.name) >= 0 && noConsent === "resolve") {
@@ -88,9 +112,10 @@ export function getVendorConsentData(options) {
     );
 }
 
-export function onConsentData(cb, type = "", win = window) {
+export function onConsentData(cb, options = {}) {
+    const { mem: memInst = createMem(), type = "", win = window } = options;
     let live = true;
-    getConsentData({ type, win })
+    getConsentData({ mem: memInst, type, win })
         .then(data => {
             if (!live) {
                 return;
@@ -108,21 +133,17 @@ export function onConsentData(cb, type = "", win = window) {
     };
 }
 
-export function onConsentString(cb, win = window) {
-    return onConsentData(
-        (err, data) => {
-            if (err) {
-                cb(err, null);
-                return;
-            }
-            cb(null, data.consentData);
-        },
-        "",
-        win
-    );
+export function onConsentString(cb, options) {
+    return onConsentData((err, data) => {
+        if (err) {
+            cb(err, null);
+            return;
+        }
+        cb(null, data.consentData);
+    }, options);
 }
 
-export function onGoogleConsent(cb, win = window) {
+export function onGoogleConsent(cb, options = {}) {
     return onConsentData(
         (err, data) => {
             if (err) {
@@ -131,12 +152,13 @@ export function onGoogleConsent(cb, win = window) {
             }
             cb(null, data.googlePersonalizationData.consentValue);
         },
-        "google",
-        win
+        Object.assign({}, options, {
+            type: "google"
+        })
     );
 }
 
-export function onVendorConsent(cb, win = window) {
+export function onVendorConsent(cb, options) {
     return onConsentData(
         (err, data) => {
             if (err) {
@@ -145,7 +167,8 @@ export function onVendorConsent(cb, win = window) {
             }
             cb(null, data);
         },
-        "vendor",
-        win
+        Object.assign({}, options, {
+            type: "vendor"
+        })
     );
 }

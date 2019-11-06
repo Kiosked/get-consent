@@ -10,6 +10,7 @@ import {
     onGoogleConsent,
     onVendorConsent
 } from "../source/accessors.js";
+import { createMem } from "../source/mem.js";
 import consentData from "./consent.json";
 import vendorData from "./vendorConsents.json";
 import googleConsentData from "./googleConsent.json";
@@ -87,6 +88,16 @@ describe("accessors", function() {
                 expect(cData).toEqual(googleConsentData);
             });
         });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getConsentData({ mem, win })
+                .then(() => getConsentData({ mem, win }))
+                .then(cData => {
+                    expect(cData).toEqual(consentData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
     });
 
     describe("getConsentString", function() {
@@ -94,6 +105,16 @@ describe("accessors", function() {
             return getConsentString({ win }).then(result => {
                 expect(result).toEqual(consentData.consentData);
             });
+        });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getConsentString({ mem, win })
+                .then(() => getConsentString({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(consentData.consentData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
         });
     });
 
@@ -103,6 +124,16 @@ describe("accessors", function() {
                 expect(result).toEqual(1);
             });
         });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getGoogleConsent({ mem, win })
+                .then(() => getGoogleConsent({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(1);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
     });
 
     describe("getVendorConsentData", function() {
@@ -111,18 +142,28 @@ describe("accessors", function() {
                 expect(result).toEqual(vendorData);
             });
         });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getVendorConsentData({ mem, win })
+                .then(() => getVendorConsentData({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(vendorData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
     });
 
     describe("onConsentData", function() {
         it("returns a removal function", function() {
-            const remove = onConsentData(() => {}, "", win);
+            const remove = onConsentData(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent data", function() {
             const cb = sinon.spy();
-            const remove = onConsentData(cb, "", win);
+            const remove = onConsentData(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -135,7 +176,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onConsentData(cb, "", win);
+            const remove = onConsentData(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -144,18 +185,37 @@ describe("accessors", function() {
                 remove();
             });
         });
+
+        it("supports memoization", function() {
+            const cb = sinon.spy();
+            const mem = createMem();
+            const remove1 = onConsentData(cb, { mem, win });
+            const remove2 = onConsentData(cb, { mem, win });
+            return sleep(200).then(() => {
+                expect(cb.callCount).toBe(2);
+                expect(win.__cmp.callCount).toBe(1);
+                const [err1, payload1] = cb.firstCall.args;
+                const [err2, payload2] = cb.firstCall.args;
+                expect(err1).toBe(null);
+                expect(payload1).toEqual(consentData);
+                expect(err2).toBe(null);
+                expect(payload2).toEqual(consentData);
+                remove1();
+                remove2();
+            });
+        });
     });
 
     describe("onConsentString", function() {
         it("returns a removal function", function() {
-            const remove = onConsentString(() => {}, win);
+            const remove = onConsentString(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent string", function() {
             const cb = sinon.spy();
-            const remove = onConsentString(cb, win);
+            const remove = onConsentString(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -168,7 +228,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onConsentString(cb, win);
+            const remove = onConsentString(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -181,14 +241,14 @@ describe("accessors", function() {
 
     describe("onGoogleConsent", function() {
         it("returns a removal function", function() {
-            const remove = onGoogleConsent(() => {}, win);
+            const remove = onGoogleConsent(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent string", function() {
             const cb = sinon.spy();
-            const remove = onGoogleConsent(cb, win);
+            const remove = onGoogleConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -201,7 +261,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onGoogleConsent(cb, win);
+            const remove = onGoogleConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -214,14 +274,14 @@ describe("accessors", function() {
 
     describe("onVendorConsent", function() {
         it("returns a removal function", function() {
-            const remove = onVendorConsent(() => {}, win);
+            const remove = onVendorConsent(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with vendor consent data", function() {
             const cb = sinon.spy();
-            const remove = onVendorConsent(cb, win);
+            const remove = onVendorConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -234,7 +294,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onVendorConsent(cb, win);
+            const remove = onVendorConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
