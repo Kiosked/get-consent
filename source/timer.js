@@ -32,7 +32,7 @@ export function expandTimings(timings) {
 /**
  * Start a dynamic timer
  * @param {Function} cb Method to call for timer events
- * @param {Array.<String|Number} timings Timings array
+ * @param {Array.<String|Number>} timings Timings array
  * @returns {Object} Timer instance
  * @private
  */
