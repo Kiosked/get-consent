@@ -6,6 +6,8 @@
 ## About
 **Get-Consent** is a helper library to make collecting GDPR consent data from CMPs easier. Consent data is typically collected from a [`window.__cmp()` function call](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/CMP%20JS%20API%20v1.1%20Final.md#what-api-will-need-to-be-provided-by-the-cmp-) by providing certain parameters. This is tedious as the function may arrive (be assigned and ready) later, or may never arrive at all. This library wraps a smart interface around the `__cmp()` call for fetching consent so that you don't have to worry about the details.
 
+Get-Consent also handles being contained within an iframe, and will try to make `window.top.postMessage` requests to fetch CMP data. Note that Google personalization is **not** available in the circumstance that the script is contained within a frame.
+
 ### Google Personalization
 Get-Consent also recognises Google consent for use with personalized ads. Currently the following CMPs are recognised and supported:
 
@@ -19,70 +21,64 @@ npm install get-consent --save-dev
 ```
 
 ## Usage
-The examples below detail the basic usage of the library. If you're looking for more detailed information, consider reading the [API documentation](API.md);
 
-Fetch using events:
+The examples below detail the basic usage of the library. If you're looking for more detailed information, consider reading the [API documentation](API.md).
+
+The simplest way to fetch consent data is to use one of the getter methods:
+
+**Raw consent data:**
 
 ```javascript
-import { ConsentStringFetcher } from "get-consent";
+import { getConsentData } from "get-consent";
 
-const fetcher = ConsentStringFetcher.attachToWindow();
-fetcher.on("consentData", data => {
-    // {
-    //     consentData: "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ",
-    //     gdprApplies: true,
-    //     hasGlobalScope: true
-    // }
-});
+getConsentData()
+    .then(data => {
+        // {
+        //     consentData: "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ",
+        //     gdprApplies: true,
+        //     hasGlobalScope: true
+        // }
+    })
+    .catch(err => {
+        if (err.name === "TimeoutError") {
+            // handle timeout
+        } else if (err.name === "InvalidConsentError") {
+            // Handle invalid/no consent
+        }
+    });
 ```
 
-Fetch by using a Promise and custom `Window` reference:
+**Consent string:**
 
 ```javascript
-import { ConsentStringFetcher } from "get-consent";
+import { getConsentString } from "get-consent";
 
-const fetcher = new ConsentStringFetcher(myWin);
-fetcher.waitForConsent().then(consentData => {
-    // {
-    //     consentData: "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ",
-    //     gdprApplies: true,
-    //     hasGlobalScope: true
-    // }
-});
-```
-
-**NB**: You can remove listeners in two ways:
- 1. Calling the `remove` method returned in the object by `.on()`
- 2. Calling `fetcher.off(eventName, callback)`
-
-**NB**: Attaching event listeners too late after instantiating a new `ConsentStringFetcher` may result in the event listeners never being called (as there was already an update emitted, but your listener may not have been attached so early). You should always check for the data before attaching the listener, or by simply using the `waitForConsent` type of methods.
-
-### Fetching the consent string directly
-If you're just after the consent string itself, there are some more _direct_ methods to get it:
-
-```javascript
-import { ConsentStringFetcher } from "get-consent";
-
-const fetcher = ConsentStringFetcher.attachToWindow();
-
-fetcher.waitForConsentString().then(consentStr => {
+(async function() {
+    const cString = await getConsentString();
     // "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ"
-});
-
-fetcher.on("consentString", data => {
-    // "BN5lERiOMYEdiAOAWeFRAAYAAaAAptQ"
-});
+})();
 ```
 
-### Vendor consents
-It's possible to fetch individual vendor consent flags using this library:
+**Google consent:**
 
 ```javascript
-import { ConsentStringFetcher } from "get-consent";
+import { getGoogleConsent } from "get-consent";
 
-const fetcher = new ConsentStringFetcher();
+(async function() {
+    const googleConsent = await getGoogleConsent();
+    // 1 or 0
+})();
+```
 
-fetcher.on("vendorConsentsData", data => {
+_Google consent is always in number form - `1` meaning consent was granted, `0` meaning it was denied._
+
+**Vendor consents:**
+
+```javascript
+import { getVendorConsentData } from "get-consent";
+
+(async function() {
+    const vendorConsentData = await getVendorConsentData();
     // {
     //     gdprApplies: true,
     //     hasGlobalScope: false,
@@ -98,43 +94,59 @@ fetcher.on("vendorConsentsData", data => {
     //         "3": false
     //     }
     // }
-});
+})();
+```
 
-fetcher.waitForVendorConsents().then(data => {
-    const hasConsent = !!data.vendorConsents[VENDORID.toString(10)];
+The `get*` methods will all throw if they fail to fetch consent data, or if they time out. This can be changed by providing an extra option:
+
+```javascript
+const cString = await getConsentString({
+    noConsent: "resolve" // Return `null` when consent fetching fails
 });
 ```
 
-### Google Consent
-`get-consent` can also detect consent for Google ads, if the current CMP supports it.
+The **timeout** can be adjusted by specifying it in the options:
 
 ```javascript
-import { ConsentStringFetcher } from "get-consent";
-
-const fetcher = new ConsentStringFetcher();
-
-fetcher.waitForGoogleConsent(250)
-    .then(hasConsent => {
-        // hasConsent is a boolean, where `true` indicates consent
-    })
-    .catch(err => {
-        // The CMP either doesnt support Google consent or the request
-        // timed out
-    });
+const googleConsent = await getGoogleConsent({
+    timeout: 2500 // Default is no timeout
+});
 ```
 
-### Timeouts
-All of the waitFor* methods can be timed-out using a parameter, for example:
+### Consent Callbacks
+
+Other methods are available for using callbacks as a way to receive consent data:
 
 ```javascript
-fetcher.waitForConsent(150)
-    .then(() => {
-        // called if CMP gets back to us in under 150ms
-    })
-    .catch(err => {
-        // err is a TimeoutError if the CMP takes longer
-        // than 150ms
-    });
+import {
+    onConsentData,
+    onConsentString,
+    onGoogleConsent,
+    onVendorConsent
+} from "get-consent";
+
+const remove = onConsentData((err, result) => {
+    // Error is always first..
+    // Second result paramter matches the same data structures
+    //   as returned by the get* methods mentioned above..
+}, { win: window.top });
+```
+
+### Caching
+
+You can use memoization to cache consent fetching, so that multiple calls to some method don't make extra unnecessary CMP requests:
+
+```javascript
+import { createMem, getConsentString } from "get-consent";
+
+const mem = createMem(); // Memoization store instance
+getConsentString({ mem }).then(cString => {
+    // ...
+});
+
+// Later..
+getConsentString({ mem }); // Does not initiate another CMP request,
+    // but merely reuses the previous requests result and returns that.
 ```
 
 ## Compatibility
