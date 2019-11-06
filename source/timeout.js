@@ -10,7 +10,6 @@ const DEFAULT_ERROR_MESSAGE = "Timed-out waiting for result";
  * @throws {TimeoutError} Throws if the promise execution
  *  times out
  * @private
- * @static
  */
 export function timeoutPromise(promise, timeout, errorMsg = DEFAULT_ERROR_MESSAGE) {
     return new Promise((resolve, reject) => {

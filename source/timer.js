@@ -1,3 +1,9 @@
+/**
+ * Expand timing expressions to an array of timing values
+ * @param {Array.<String|Number>} timings Timings array
+ * @returns {Number[]} Array of timing values
+ * @private
+ */
 export function expandTimings(timings) {
     if (typeof timings === "number") {
         return timings;
@@ -23,6 +29,13 @@ export function expandTimings(timings) {
     return computedTimings;
 }
 
+/**
+ * Start a dynamic timer
+ * @param {Function} cb Method to call for timer events
+ * @param {Array.<String|Number} timings Timings array
+ * @returns {Object} Timer instance
+ * @private
+ */
 export function startTimer(cb, timings) {
     const timer = {
         enabled: true,
@@ -47,6 +60,11 @@ export function startTimer(cb, timings) {
     return timer;
 }
 
+/**
+ * Stop a timer instance
+ * @param {Object} timer Timer instance
+ * @private
+ */
 export function stopTimer(timer) {
     timer.enabled = false;
     clearTimeout(timer.jsTimer);

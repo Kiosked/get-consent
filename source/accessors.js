@@ -29,6 +29,7 @@ const CONSENT_EXPECTED_ERROR_NAMES = ["InvalidConsentError", "TimeoutError"];
  *  request
  * @returns {Promise.<null|ConsentPayload|VendorConsentPayload|GoogleConsentPayload>}
  *  A promise that resolves with consent data, or null if appropriate
+ * @memberof module:GetConsent
  */
 export function getConsentData(options = {}) {
     const {
@@ -84,6 +85,12 @@ export function getConsentData(options = {}) {
     });
 }
 
+/**
+ * Get the current consent string, if available
+ * @param {GetConsentDataOptions=} options Options for the lookup
+ * @returns {Promise.<String|null>}
+ * @memberof module:GetConsent
+ */
 export function getConsentString(options) {
     return getConsentData(
         Object.assign({}, options, {
@@ -92,6 +99,13 @@ export function getConsentString(options) {
     ).then(result => (result ? result.consentData : result));
 }
 
+/**
+ * Get the current Google consent state, if available
+ * @param {GetConsentDataOptions=} options Options for the lookup
+ * @returns {Promise.<Number|null>} Returns 1 or 0 for Google consent,
+ *  or null if not available and specified not to throw
+ * @memberof module:GetConsent
+ */
 export function getGoogleConsent(options) {
     return getConsentData(
         Object.assign({}, options, {
@@ -104,6 +118,12 @@ export function getGoogleConsent(options) {
     );
 }
 
+/**
+ * Get the current vendors consent state, if available
+ * @param {GetConsentDataOptions=} options Options for the lookup
+ * @returns {Promise.<VendorConsentPayload|null>}
+ * @memberof module:GetConsent
+ */
 export function getVendorConsentData(options) {
     return getConsentData(
         Object.assign({}, options, {
@@ -112,6 +132,27 @@ export function getVendorConsentData(options) {
     );
 }
 
+/**
+ * Listen for consent data and fire a callback once received
+ * @param {Function} cb The callback to fire - receives the
+ *  `ConsentPayload`
+ * @param {GetConsentDataOptions=} options Options for the lookup
+ * @returns {Function} Function to call to stop listening
+ * @memberof module:GetConsent
+ * @example
+ *  const remove = onConsentData(
+ *      (err, data) => {
+ *          if (err) {
+ *              console.error(err);
+ *          } else {
+ *              console.log("Consent payload:", data);
+ *          }
+ *      },
+ *      { win: window.top }
+ *  );
+ *  // Later:
+ *  remove();
+ */
 export function onConsentData(cb, options = {}) {
     const { mem: memInst = createMem(), type = "", win = window } = options;
     let live = true;
@@ -133,6 +174,15 @@ export function onConsentData(cb, options = {}) {
     };
 }
 
+/**
+ * Listen for consent data and fire a callback with the
+ *  consent string once received
+ * @param {Function} cb Callback to fire - receives
+ *  just the consent string or an error if not avail.
+ * @param {GetConsentDataOptions=} options
+ * @returns {Function} Removal function
+ * @memberof module:GetConsent
+ */
 export function onConsentString(cb, options) {
     return onConsentData((err, data) => {
         if (err) {
@@ -143,6 +193,15 @@ export function onConsentString(cb, options) {
     }, options);
 }
 
+/**
+ * Listen for consent data and fire a callback with the
+ *  consent string once received
+ * @param {Function} cb Callback to fire - receives
+ *  just the consent string or an error if not avail.
+ * @param {GetConsentDataOptions=} options
+ * @returns {Function} Removal function
+ * @memberof module:GetConsent
+ */
 export function onGoogleConsent(cb, options = {}) {
     return onConsentData(
         (err, data) => {
@@ -158,6 +217,15 @@ export function onGoogleConsent(cb, options = {}) {
     );
 }
 
+/**
+ * Listen for consent data and fire a callback with
+ *  vendor consent data once received
+ * @param {Function} cb Callback to fire - receives
+ *  vendor consent data or an error if not avail.
+ * @param {GetConsentDataOptions=} options
+ * @returns {Function} Removal function
+ * @memberof module:GetConsent
+ */
 export function onVendorConsent(cb, options) {
     return onConsentData(
         (err, data) => {

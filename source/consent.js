@@ -49,7 +49,6 @@ const CMP_CHECK_TIMINGS = [0, "4x25", "4x50", "5x100", "2x200", "3x300", "10x500
  * @param {Window=} win Optional window override
  * @returns {null|Boolean} Null if no SourcePoint CMP Google consent state detected, or Boolean
  *  if state can be retrieved
- * @static
  * @private
  */
 function getSourcePointGoogleConsent(win = window) {
@@ -66,7 +65,6 @@ function getSourcePointGoogleConsent(win = window) {
  * @param {String} propertyName Property name to check
  * @returns {Boolean} True if the object contains the specified property
  * @private
- * @static
  */
 function hasProperty(obj, propertyName) {
     return obj.hasOwnProperty(propertyName) || Object.keys(obj).indexOf(propertyName) >= 0;
@@ -76,7 +74,7 @@ function hasProperty(obj, propertyName) {
  * Check if a CMP ping payload is valid
  * @param {Object} payload The ping response from a CMP instance
  * @returns {Boolean}
- * @static
+ * @private
  */
 export function isCMPPing(payload) {
     if (typeof payload !== "object" || payload === null || !hasProperty(payload, "cmpLoaded")) {
@@ -89,7 +87,7 @@ export function isCMPPing(payload) {
  * Check if a consent payload object is valid
  * @param {Object|ConsentPayload} payload The GDPR consent payload from a __cmp() call
  * @returns {Boolean} True if valid, false otherwise
- * @static
+ * @private
  */
 export function isConsentPayload(payload) {
     if (typeof payload !== "object" || payload === null) {
@@ -104,7 +102,7 @@ export function isConsentPayload(payload) {
  * Check if a Google consent payload is valid
  * @param {Object|GoogleConsentPayload} payload The response from a CMP instance
  * @returns {Boolean}
- * @static
+ * @private
  */
 export function isGooglePayload(payload) {
     return !!(
@@ -118,7 +116,7 @@ export function isGooglePayload(payload) {
  * Check if a vendors consent payload is valid
  * @param {Object|VendorConsentPayload} payload The response from a CMP instance
  * @returns {Boolean}
- * @static
+ * @private
  */
 export function isVendorPayload(payload) {
     return !!(
@@ -134,7 +132,6 @@ export function isVendorPayload(payload) {
  * @returns {Promise.<String>} Returns a promise that resolves with the
  *  type of CMP connection detected ("obj" is local window object, "msg"
  *  is via postMessage)
- * @static
  * @private
  */
 function waitForCMP(win = window) {
@@ -191,6 +188,7 @@ function waitForCMP(win = window) {
  * @param {WaitForConsentDataOptions=} options Options for the CMP request
  * @returns {Promise.<ConsentPayload|VendorConsentPayload|GoogleConsentPayload>} The
  *  requested consent data
+ * @private
  */
 export function waitForConsentData(options = {}) {
     const {

@@ -5,6 +5,7 @@
 /**
  * Create a new memoization instance
  * @returns {Mem}
+ * @memberof module:GetConsent
  */
 export function createMem() {
     return [];
@@ -50,6 +51,7 @@ function keysMatch(set1, set2) {
  * @param {Array.<*>} cacheKeys Array of keys used to distinguish
  *  cached items
  * @returns {*} Returns a cached result
+ * @private
  */
 export function mem(memInst, meth, args, cacheKeys) {
     const cachedResult = getMem(memInst, meth, cacheKeys);
