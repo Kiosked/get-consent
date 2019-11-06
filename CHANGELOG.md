@@ -1,5 +1,13 @@
 # Get-Consent changelog
 
+## v1.0.0
+_2019-11-06_
+
+ * Brand new library and structure
+   * Functional, not class-based
+ * Memoized results
+ * Iframe support via `window.top.postMessage`
+
 ## v0.5.0
 _2019-10-16_
 
