@@ -10,6 +10,7 @@ import {
     onGoogleConsent,
     onVendorConsent
 } from "../source/accessors.js";
+import { createMem } from "../source/mem.js";
 import consentData from "./consent.json";
 import vendorData from "./vendorConsents.json";
 import googleConsentData from "./googleConsent.json";
@@ -87,6 +88,16 @@ describe("accessors", function() {
                 expect(cData).toEqual(googleConsentData);
             });
         });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getConsentData({ mem, win })
+                .then(() => getConsentData({ mem, win }))
+                .then(cData => {
+                    expect(cData).toEqual(consentData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
     });
 
     describe("getConsentString", function() {
@@ -94,6 +105,16 @@ describe("accessors", function() {
             return getConsentString({ win }).then(result => {
                 expect(result).toEqual(consentData.consentData);
             });
+        });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getConsentString({ mem, win })
+                .then(() => getConsentString({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(consentData.consentData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
         });
     });
 
@@ -103,6 +124,16 @@ describe("accessors", function() {
                 expect(result).toEqual(1);
             });
         });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getGoogleConsent({ mem, win })
+                .then(() => getGoogleConsent({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(1);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
     });
 
     describe("getVendorConsentData", function() {
@@ -110,6 +141,16 @@ describe("accessors", function() {
             return getVendorConsentData({ win }).then(result => {
                 expect(result).toEqual(vendorData);
             });
+        });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getVendorConsentData({ mem, win })
+                .then(() => getVendorConsentData({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual(vendorData);
+                    expect(win.__cmp.callCount).toEqual(1);
+                });
         });
     });
 
@@ -142,6 +183,25 @@ describe("accessors", function() {
                 expect(payload).toBe(null);
                 expect(err.message).toMatch(/Invalid consent/i);
                 remove();
+            });
+        });
+
+        it("supports memoization", function() {
+            const cb = sinon.spy();
+            const mem = createMem();
+            const remove1 = onConsentData(cb, { mem, win });
+            const remove2 = onConsentData(cb, { mem, win });
+            return sleep(200).then(() => {
+                expect(cb.callCount).toBe(2);
+                expect(win.__cmp.callCount).toBe(1);
+                const [err1, payload1] = cb.firstCall.args;
+                const [err2, payload2] = cb.firstCall.args;
+                expect(err1).toBe(null);
+                expect(payload1).toEqual(consentData);
+                expect(err2).toBe(null);
+                expect(payload2).toEqual(consentData);
+                remove1();
+                remove2();
             });
         });
     });
