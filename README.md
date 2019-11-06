@@ -8,6 +8,8 @@
 
 Get-Consent also handles being contained within an iframe, and will try to make `window.top.postMessage` requests to fetch CMP data. Note that Google personalization is **not** available in the circumstance that the script is contained within a frame.
 
+Get-Consent is only **7.2 KiB** minified.
+
 ### Google Personalization
 Get-Consent also recognises Google consent for use with personalized ads. Currently the following CMPs are recognised and supported:
 
