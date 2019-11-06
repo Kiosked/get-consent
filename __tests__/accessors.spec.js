@@ -115,14 +115,14 @@ describe("accessors", function() {
 
     describe("onConsentData", function() {
         it("returns a removal function", function() {
-            const remove = onConsentData(() => {}, "", win);
+            const remove = onConsentData(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent data", function() {
             const cb = sinon.spy();
-            const remove = onConsentData(cb, "", win);
+            const remove = onConsentData(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -135,7 +135,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onConsentData(cb, "", win);
+            const remove = onConsentData(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -148,14 +148,14 @@ describe("accessors", function() {
 
     describe("onConsentString", function() {
         it("returns a removal function", function() {
-            const remove = onConsentString(() => {}, win);
+            const remove = onConsentString(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent string", function() {
             const cb = sinon.spy();
-            const remove = onConsentString(cb, win);
+            const remove = onConsentString(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -168,7 +168,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onConsentString(cb, win);
+            const remove = onConsentString(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -181,14 +181,14 @@ describe("accessors", function() {
 
     describe("onGoogleConsent", function() {
         it("returns a removal function", function() {
-            const remove = onGoogleConsent(() => {}, win);
+            const remove = onGoogleConsent(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with consent string", function() {
             const cb = sinon.spy();
-            const remove = onGoogleConsent(cb, win);
+            const remove = onGoogleConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -201,7 +201,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onGoogleConsent(cb, win);
+            const remove = onGoogleConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -214,14 +214,14 @@ describe("accessors", function() {
 
     describe("onVendorConsent", function() {
         it("returns a removal function", function() {
-            const remove = onVendorConsent(() => {}, win);
+            const remove = onVendorConsent(() => {}, { win });
             expect(typeof remove).toBe("function");
             remove();
         });
 
         it("executes callback with vendor consent data", function() {
             const cb = sinon.spy();
-            const remove = onVendorConsent(cb, win);
+            const remove = onVendorConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;
@@ -234,7 +234,7 @@ describe("accessors", function() {
         it("executes callback with error", function() {
             successful = false;
             const cb = sinon.spy();
-            const remove = onVendorConsent(cb, win);
+            const remove = onVendorConsent(cb, { win });
             return sleep(200).then(() => {
                 expect(cb.callCount).toBe(1);
                 const [err, payload] = cb.firstCall.args;

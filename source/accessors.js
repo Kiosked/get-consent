@@ -112,7 +112,8 @@ export function getVendorConsentData(options) {
     );
 }
 
-export function onConsentData(cb, type = "", win = window) {
+export function onConsentData(cb, options = {}) {
+    const { type = "", win = window } = options;
     let live = true;
     getConsentData({ type, win })
         .then(data => {
@@ -132,21 +133,17 @@ export function onConsentData(cb, type = "", win = window) {
     };
 }
 
-export function onConsentString(cb, win = window) {
-    return onConsentData(
-        (err, data) => {
-            if (err) {
-                cb(err, null);
-                return;
-            }
-            cb(null, data.consentData);
-        },
-        "",
-        win
-    );
+export function onConsentString(cb, options) {
+    return onConsentData((err, data) => {
+        if (err) {
+            cb(err, null);
+            return;
+        }
+        cb(null, data.consentData);
+    }, options);
 }
 
-export function onGoogleConsent(cb, win = window) {
+export function onGoogleConsent(cb, options = {}) {
     return onConsentData(
         (err, data) => {
             if (err) {
@@ -155,12 +152,13 @@ export function onGoogleConsent(cb, win = window) {
             }
             cb(null, data.googlePersonalizationData.consentValue);
         },
-        "google",
-        win
+        Object.assign({}, options, {
+            type: "google"
+        })
     );
 }
 
-export function onVendorConsent(cb, win = window) {
+export function onVendorConsent(cb, options) {
     return onConsentData(
         (err, data) => {
             if (err) {
@@ -169,7 +167,8 @@ export function onVendorConsent(cb, win = window) {
             }
             cb(null, data);
         },
-        "vendor",
-        win
+        Object.assign({}, options, {
+            type: "vendor"
+        })
     );
 }
