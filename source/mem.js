@@ -15,19 +15,28 @@ export function createMem() {
  * Fetch a memoized value from a mem collection
  * @param {Mem} memInst The mem instance
  * @param {Function} meth The memoized method
+ * @param {Array.<*>} args Array of function arguments
  * @param {Array.<*>} cacheKeys Array of keys used to distinguish
  *  cached items
- * @returns {null|*} Returns null if no value found, or the value
- *  of the memoized method if it exists
+ * @returns {Array.<Boolean,*>} Returns an array with 1 or 2
+ *  elements. First is always boolean representing whether a
+ *  cached result exists or not. Second is the cached result if
+ *  available.
  * @private
  */
-function getMem(memInst, meth, cacheKeys) {
-    for (let i = 0; i < memInst.length; i += 1) {
-        if (memInst[i].m === meth && keysMatch(cacheKeys, memInst[i].k)) {
-            return memInst[i].c;
+function getMem(memInst, meth, args, cacheKeys) {
+    if (memInst._) {
+        const res = memInst._(meth, args, cacheKeys);
+        if (res) {
+            return [true, res.c];
         }
     }
-    return null;
+    for (let i = 0; i < memInst.length; i += 1) {
+        if (memInst[i].m === meth && keysMatch(cacheKeys, memInst[i].k)) {
+            return [true, memInst[i].c];
+        }
+    }
+    return [false];
 }
 
 /**
@@ -54,8 +63,8 @@ function keysMatch(set1, set2) {
  * @private
  */
 export function mem(memInst, meth, args, cacheKeys) {
-    const cachedResult = getMem(memInst, meth, cacheKeys);
-    if (cachedResult) {
+    const [hasCachedResult, cachedResult] = getMem(memInst, meth, args, cacheKeys);
+    if (hasCachedResult) {
         return cachedResult;
     }
     const newResult = meth.apply(null, args);

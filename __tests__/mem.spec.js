@@ -48,5 +48,22 @@ describe("mem", function() {
                     expect(meth2.callCount).toEqual(1);
                 });
         });
+
+        it("supports underscore function handler", function() {
+            const memInst = [];
+            memInst._ = sinon
+                .stub()
+                .onFirstCall()
+                .returns({ c: "a" })
+                .onSecondCall()
+                .returns({ c: "b" });
+            const fn = sinon.stub();
+            const res1 = mem(memInst, fn, [], [1]);
+            const res2 = mem(memInst, fn, [], [2]);
+            expect(fn.callCount).toBe(0);
+            expect(memInst._.callCount).toBe(2);
+            expect(res1).toEqual("a");
+            expect(res2).toEqual("b");
+        });
     });
 });
