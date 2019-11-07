@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v1.1.0
+_2019-11-07_
+
+ * Mem `_` override for cached values
+
 ## v1.0.0
 _2019-11-06_
 
