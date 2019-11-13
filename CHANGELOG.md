@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v1.2.0
+_2019-11-13_
+
+ * Support `__cmp` consent callbacks specifying `undefined` for _success_ parameter
+
 ## v1.1.0
 _2019-11-07_
 
