@@ -49,16 +49,19 @@ describe("consent", function() {
 
     describe("waitForConsentData", function() {
         describe("using standard window reference", function() {
-            let win;
+            let win, consentDataCb;
 
             beforeEach(function() {
                 const time = 150;
+                consentDataCb = cb => {
+                    setTimeout(() => {
+                        cb(consentData, true);
+                    }, time);
+                };
                 win = {
                     __cmp: sinon.stub().callsFake((a, b, c) => {
                         if (a === "getConsentData") {
-                            setTimeout(() => {
-                                c(consentData, true);
-                            }, time);
+                            consentDataCb(c);
                             return;
                         } else if (a === "getVendorConsents") {
                             setTimeout(() => {
@@ -91,6 +94,37 @@ describe("consent", function() {
                     return waitForConsentData({ win }).then(res => {
                         expect(win.__cmp.calledWith("getConsentData", null)).toBe(true);
                         expect(typeof win.__cmp.firstCall.args[2]).toBe("function");
+                    });
+                });
+
+                it("fails with InvalidConsentError if consent payload is invalid", function() {
+                    consentDataCb = cb => cb({}, true);
+                    return waitForConsentData({ win }).then(
+                        () => {
+                            throw new Error("Should not resolve");
+                        },
+                        err => {
+                            expect(err.name).toEqual("InvalidConsentError");
+                        }
+                    );
+                });
+
+                it("fails with InvalidConsentError if not successful", function() {
+                    consentDataCb = cb => cb(consentData, false);
+                    return waitForConsentData({ win }).then(
+                        () => {
+                            throw new Error("Should not resolve");
+                        },
+                        err => {
+                            expect(err.name).toEqual("InvalidConsentError");
+                        }
+                    );
+                });
+
+                it("completes successfully if success state undefined", function() {
+                    consentDataCb = cb => cb(consentData, undefined);
+                    return waitForConsentData({ win }).then(res => {
+                        expect(res).toEqual(consentData);
                     });
                 });
             });
