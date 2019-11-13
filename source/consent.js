@@ -219,7 +219,7 @@ export function waitForConsentData(options = {}) {
                     // object - This is obviously the preferred approach.
                     const cmpArgs = cmpParam === false ? [cmpCmd] : [cmpCmd, cmpParam];
                     win.__cmp(...cmpArgs, (consentPayload, wasSuccessful) => {
-                        if (!wasSuccessful || !validate(consentPayload)) {
+                        if (wasSuccessful === false || !validate(consentPayload)) {
                             const err = new Error("Invalid consent payload from CMP");
                             err.name = "InvalidConsentError";
                             return reject(err);
