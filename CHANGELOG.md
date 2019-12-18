@@ -1,5 +1,11 @@
 # Get-Consent changelog
 
+## v1.3.0
+_2019-12-18_
+
+ * **CCPA** support:
+   * `getUSPString`, `onUSPString` and `uspApplies` methods for dealing with the US Privacy framework from IAB
+
 ## v1.2.0
 _2019-11-13_
 
