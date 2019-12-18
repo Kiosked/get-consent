@@ -4,10 +4,12 @@ import {
     getConsentData,
     getConsentString,
     getGoogleConsent,
+    getUSPString,
     getVendorConsentData,
     onConsentData,
     onConsentString,
     onGoogleConsent,
+    onUSPString,
     onVendorConsent
 } from "../source/accessors.js";
 import { createMem } from "../source/mem.js";
@@ -41,6 +43,22 @@ describe("accessors", function() {
                     return;
                 }
                 throw new Error("Unknown CMP command");
+            }),
+            __uspapi: sinon.stub().callsFake((command, version, callback) => {
+                if (command !== "getuspdata") {
+                    throw new Error(`Invalid command: ${command}`);
+                } else if (version !== 1) {
+                    throw new Error(`Invalid version: ${version}`);
+                }
+                setTimeout(() => {
+                    callback(
+                        {
+                            uspString: "1NNN",
+                            version: 1
+                        },
+                        successful
+                    );
+                }, 0);
             }),
             addEventListener: sinon.spy(),
             postMessage: sinon.spy(),
@@ -132,6 +150,24 @@ describe("accessors", function() {
                 .then(result => {
                     expect(result).toEqual(1);
                     expect(win.__cmp.callCount).toEqual(1);
+                });
+        });
+    });
+
+    describe("getUSPString", function() {
+        it("returns privacy string", function() {
+            return getUSPString({ win }).then(res => {
+                expect(res).toEqual("1NNN");
+            });
+        });
+
+        it("supports memoization", function() {
+            const mem = createMem();
+            return getUSPString({ mem, win })
+                .then(() => getUSPString({ mem, win }))
+                .then(result => {
+                    expect(result).toEqual("1NNN");
+                    expect(win.__uspapi.callCount).toEqual(1);
                 });
         });
     });
@@ -267,6 +303,39 @@ describe("accessors", function() {
                 const [err, payload] = cb.firstCall.args;
                 expect(payload).toBe(null);
                 expect(err.message).toMatch(/Invalid consent/i);
+                remove();
+            });
+        });
+    });
+
+    describe("onUSPString", function() {
+        it("returns a removal function", function() {
+            const remove = onUSPString(() => {}, { win });
+            expect(typeof remove).toBe("function");
+            remove();
+        });
+
+        it("executes callback with USP string", function() {
+            const cb = sinon.spy();
+            const remove = onUSPString(cb, { win });
+            return sleep(200).then(() => {
+                expect(cb.callCount).toBe(1);
+                const [err, payload] = cb.firstCall.args;
+                expect(err).toBe(null);
+                expect(payload).toEqual("1NNN");
+                remove();
+            });
+        });
+
+        it("executes callback with error", function() {
+            successful = false;
+            const cb = sinon.spy();
+            const remove = onUSPString(cb, { win });
+            return sleep(200).then(() => {
+                expect(cb.callCount).toBe(1);
+                const [err, payload] = cb.firstCall.args;
+                expect(payload).toBe(null);
+                expect(err.message).toMatch(/Invalid USP payload/i);
                 remove();
             });
         });

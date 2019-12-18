@@ -255,7 +255,7 @@ export function onGoogleConsent(cb, options = {}) {
 export function onUSPString(cb, options = {}) {
     const { mem: memInst = createMem(), win = window } = options;
     let live = true;
-    getConsentData({ mem: memInst, noConsent: "resolve", type: "usp", win })
+    getConsentData({ mem: memInst, /*noConsent: "resolve",*/ type: "usp", win })
         .then(uspString => {
             if (!live) {
                 return;
