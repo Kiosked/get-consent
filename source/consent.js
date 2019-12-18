@@ -1,5 +1,6 @@
 import { startTimer, stopTimer } from "./timer.js";
 import { getCookieValue } from "./cookie.js";
+import { isUSPString } from "./usp.js";
 
 /**
  * @typedef {Object} ConsentPayload
@@ -126,16 +127,6 @@ export function isGooglePayload(payload) {
         payload.googlePersonalizationData &&
         typeof payload.googlePersonalizationData === "object"
     );
-}
-
-/**
- * Test if a string is a valid USP string
- * @param {String} str The string to check
- * @returns {Boolean} True if valid, false otherwise
- * @private
- */
-function isUSPString(str) {
-    return /^1[YN-]{3}$/i.test(str);
 }
 
 /**
