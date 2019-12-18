@@ -1,5 +1,5 @@
 # Get-Consent
-> GDPR consent string fetcher
+> GDPR consent string & US Privacy string fetcher
 
 [![Build Status](https://travis-ci.org/Kiosked/get-consent.svg?branch=master)](https://travis-ci.org/Kiosked/get-consent) [![npm version](https://badge.fury.io/js/get-consent.svg)](https://www.npmjs.com/package/get-consent)
 
