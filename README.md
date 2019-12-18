@@ -8,7 +8,9 @@
 
 Get-Consent also handles being contained within an iframe, and will try to make `window.top.postMessage` requests to fetch CMP data. Note that Google personalization is **not** available in the circumstance that the script is contained within a frame.
 
-Get-Consent is only **7.7 KiB** minified.
+Get-Consent supports fetching and processing [USP (US Privacy) strings](https://iabtechlab.com/standards/ccpa/) from CMP-style systems and cookies for supporting the [CCPA](https://en.wikipedia.org/wiki/California_Consumer_Privacy_Act).
+
+Get-Consent is **10.8 KiB** minified.
 
 ### Google Personalization
 Get-Consent also recognises Google consent for use with personalized ads. Currently the following CMPs are recognised and supported:
@@ -112,6 +114,27 @@ The **timeout** can be adjusted by specifying it in the options:
 ```javascript
 const googleConsent = await getGoogleConsent({
     timeout: 2500 // Default is no timeout
+});
+```
+
+### USP Strings (CCPA)
+
+Fetching the USP string is performed using different methods for the most part:
+
+```javascript
+import { getUSPString, onUSPString, uspApplies } from "get-consent";
+
+// ...
+
+const uspString = await getUSPString();
+// 1YN-
+const uspAppliesToUser = uspApplies(uspString);
+// true
+
+onUSPString(uspStr => {
+    // 1---
+    const uspAppliesToUser = uspApplies(uspStr);
+    // false
 });
 ```
 
