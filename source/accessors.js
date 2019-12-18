@@ -2,7 +2,8 @@ import {
     isConsentPayload,
     isGooglePayload,
     isVendorPayload,
-    waitForConsentData
+    waitForConsentData,
+    waitForUSPData
 } from "./consent.js";
 import { timeoutPromise } from "./timeout.js";
 import { createMem, mem } from "./mem.js";
@@ -19,7 +20,7 @@ const CONSENT_EXPECTED_ERROR_NAMES = ["InvalidConsentError", "TimeoutError"];
  *  null (no timeout).
  * @property {String=} type Type of consent data to fetch. Defaults to ""
  *  (generic CMP consent data). Can be set to "google" for Google consent
- *  data or "vendor" for vendors consent data.
+ *  data, "usp" for USP strings or "vendor" for vendors consent data.
  * @property {Window=} win Optional window override.
  */
 
@@ -67,6 +68,8 @@ export function getConsentData(options = {}) {
             ],
             ["getVendorConsents", win]
         );
+    } else if (type === "usp") {
+        consentPromise = mem(memInst, waitForUSPData, [{ win }], ["getUSP", win]);
     } else {
         consentPromise = mem(memInst, waitForConsentData, [{ win }], [win]);
     }
@@ -115,6 +118,22 @@ export function getGoogleConsent(options) {
         result && result.googlePersonalizationData
             ? result.googlePersonalizationData.consentValue
             : result
+    );
+}
+
+/**
+ * Get the USP string, if available (CCPA)
+ * @param {GetConsentDataOptions=} options Options for the lookup
+ * @returns {Promise.<String|null>} The USP string if found or
+ *  null
+ * @memberof module:GetConsent
+ */
+export function getUSPString(options) {
+    return getConsentData(
+        Object.assign({}, options, {
+            noConsent: "resolve",
+            type: "usp"
+        })
     );
 }
 
@@ -215,6 +234,43 @@ export function onGoogleConsent(cb, options = {}) {
             type: "google"
         })
     );
+}
+
+/**
+ * @typedef {Object} OnUSPStringOptions
+ * @property {Mem=} mem Optional mem instance override
+ * @property {Window=} win Optional window instance override
+ */
+
+/**
+ * Listen for a USP string and fire a callback with
+ *  the privacy string once received
+ * @param {Function} cb Callback to fire - called
+ *  with (error, uspString): error if failed, or
+ *  null and with uspString as following argument
+ * @param {OnUSPStringOptions=} options
+ * @returns {Function} Removal function
+ * @memberof module:GetConsent
+ */
+export function onUSPString(cb, options = {}) {
+    const { mem: memInst = createMem(), win = window } = options;
+    let live = true;
+    getConsentData({ mem: memInst, noConsent: "resolve", type: "usp", win })
+        .then(uspString => {
+            if (!live) {
+                return;
+            }
+            cb(null, uspString);
+        })
+        .catch(err => {
+            if (!live) {
+                return;
+            }
+            cb(err, null);
+        });
+    return () => {
+        live = false;
+    };
 }
 
 /**

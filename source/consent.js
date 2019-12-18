@@ -1,4 +1,5 @@
 import { startTimer, stopTimer } from "./timer.js";
+import { getCookieValue } from "./cookie.js";
 
 /**
  * @typedef {Object} ConsentPayload
@@ -43,6 +44,10 @@ import { startTimer, stopTimer } from "./timer.js";
  * @private
  */
 const CMP_CHECK_TIMINGS = [0, "4x25", "4x50", "5x100", "2x200", "3x300", "10x500", "10x750", 1000];
+const INVALID_CONSENT_ERROR = "InvalidConsentError";
+const USPAPI_GET_COMMAND = "getuspdata";
+const USPAPI_PROMISE_KEY = "_uspapiWaitPromise";
+const USPAPI_VERSION = 1;
 
 /**
  * Get SourcePoint CMP Google consent status
@@ -53,10 +58,21 @@ const CMP_CHECK_TIMINGS = [0, "4x25", "4x50", "5x100", "2x200", "3x300", "10x500
  */
 function getSourcePointGoogleConsent(win = window) {
     // SourcePoint CMP: https://help.sourcepoint.com/en/articles/2322023-strategies-to-manage-dfp-tag-firing-for-consent
-    if (win.document && /_sp_enable_dfp_personalized_ads/.test(win.document.cookie)) {
-        return /_sp_enable_dfp_personalized_ads=true/.test(win.document.cookie);
+    const dfpPersonalisedAds = getCookieValue(win, "_sp_enable_dfp_personalized_ads");
+    if (dfpPersonalisedAds && /^(true|false)$/i.test(dfpPersonalisedAds)) {
+        return /^true$/i.test(dfpPersonalisedAds);
     }
     return null;
+}
+
+/**
+ * Get the cookie value for the USP string
+ * @param {Window=} win Optional window override
+ * @returns {String|null} The USP string or null if
+ *  not found
+ */
+function getUSPCookieValue(win = window) {
+    return getCookieValue(win, "us_privacy", null);
 }
 
 /**
@@ -110,6 +126,16 @@ export function isGooglePayload(payload) {
         payload.googlePersonalizationData &&
         typeof payload.googlePersonalizationData === "object"
     );
+}
+
+/**
+ * Test if a string is a valid USP string
+ * @param {String} str The string to check
+ * @returns {Boolean} True if valid, false otherwise
+ * @private
+ */
+function isUSPString(str) {
+    return /^1[YN-]{3}$/i.test(str);
 }
 
 /**
@@ -221,7 +247,7 @@ export function waitForConsentData(options = {}) {
                     win.__cmp(...cmpArgs, (consentPayload, wasSuccessful) => {
                         if (wasSuccessful === false || !validate(consentPayload)) {
                             const err = new Error("Invalid consent payload from CMP");
-                            err.name = "InvalidConsentError";
+                            err.name = INVALID_CONSENT_ERROR;
                             return reject(err);
                         }
                         resolve(consentPayload);
@@ -256,6 +282,115 @@ export function waitForConsentData(options = {}) {
                     );
                 } else {
                     reject(new Error(`Unknown CMP access method: ${accessMethod}`));
+                }
+            })
+    );
+}
+
+function waitForUSPAPI(win = window) {
+    if (win[USPAPI_PROMISE_KEY]) {
+        return win[USPAPI_PROMISE_KEY];
+    }
+    const topWin = win.top;
+    const callID = `uspAPITest:${Math.floor(Math.random() * 9e6)}`;
+    win[USPAPI_PROMISE_KEY] = new Promise(resolve => {
+        const stopListening = () => {
+            stopTimer(timer);
+            win.removeEventListener("message", handleMsg, false);
+        };
+        const timer = startTimer(() => {
+            if (typeof win.__uspapi === "function") {
+                stopListening();
+                resolve("obj");
+            }
+            topWin.postMessage(
+                JSON.stringify({
+                    __uspapiCall: {
+                        command: USPAPI_GET_COMMAND, // Only 'getuspdata' is supported currently
+                        version: USPAPI_VERSION,
+                        callId: callID
+                    }
+                })
+            );
+        }, CMP_CHECK_TIMINGS);
+        const handleMsg = msg => {
+            let { data } = msg;
+            try {
+                data = typeof data === "string" ? JSON.parse(data) : data;
+            } catch (err) {}
+            if (data && typeof data === "object" && data.__uspapiReturn) {
+                stopListening();
+                resolve("msg");
+            }
+        };
+        win.addEventListener("message", handleMsg, false);
+    });
+    return win[USPAPI_PROMISE_KEY];
+}
+
+export function waitForUSPData(options = {}) {
+    const { win = window } = options;
+    const winTop = win.top || win;
+    // Check cookie first
+    const uspStr = getUSPCookieValue(win);
+    if (uspStr && isUSPString(uspStr)) {
+        return Promise.resolve(uspStr);
+    }
+    // Check callback API
+    return waitForUSPAPI(win).then(
+        accessMethod =>
+            new Promise((resolve, reject) => {
+                if (accessMethod === "obj") {
+                    // USP API is in the local window/frame - make requests against the __uspapi
+                    // object - This is obviously the preferred approach.
+                    win.__uspapi(USPAPI_GET_COMMAND, USPAPI_VERSION, (uspObject, wasSuccessful) => {
+                        if (
+                            wasSuccessful === false ||
+                            (uspObject && !isUSPString(uspObject.uspString))
+                        ) {
+                            const err = new Error("Invalid USP payload from USP API");
+                            err.name = INVALID_CONSENT_ERROR;
+                            return reject(err);
+                        }
+                        resolve(uspObject.uspString);
+                    });
+                } else if (accessMethod === "msg") {
+                    const callID = `uspAPI:${Math.floor(Math.random() * 9e6)}`;
+                    // USP API is in the top frame/window whereas we're most likely within an
+                    // iframe
+                    const handleMsg = msg => {
+                        let { data } = msg;
+                        try {
+                            data = typeof data === "string" ? JSON.parse(data) : data;
+                        } catch (err) {}
+                        try {
+                            const { __uspapiReturn: output } = data;
+                            if (output.callId === callID) {
+                                if (output && output.success && isUSPString(output.returnValue)) {
+                                    winTop.removeEventListener("message", handleMsg, false);
+                                    resolve(output.returnValue);
+                                } else {
+                                    const err = new Error(
+                                        "Invalid USP payload response from USP API postMessage listener"
+                                    );
+                                    err.name = INVALID_CONSENT_ERROR;
+                                    return reject(err);
+                                }
+                            }
+                        } catch (err) {}
+                    };
+                    winTop.addEventListener("message", handleMsg, false);
+                    winTop.postMessage(
+                        JSON.stringify({
+                            __uspapiCall: {
+                                command: USPAPI_GET_COMMAND,
+                                version: USPAPI_VERSION,
+                                callId: callID
+                            }
+                        })
+                    );
+                } else {
+                    reject(new Error(`Unknown USP API access method: ${accessMethod}`));
                 }
             })
     );
