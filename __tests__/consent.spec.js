@@ -4,7 +4,8 @@ import {
     isConsentPayload,
     isGooglePayload,
     isVendorPayload,
-    waitForConsentData
+    waitForConsentData,
+    waitForUSPData
 } from "../source/consent.js";
 import consentData from "./consent.json";
 import vendorData from "./vendorConsents.json";
@@ -74,7 +75,7 @@ describe("consent", function() {
                             }, time);
                             return;
                         }
-                        throw new Error("Unknown CMP command");
+                        throw new Error(`Unknown CMP command: ${a}`);
                     }),
                     addEventListener: sinon.spy(),
                     postMessage: sinon.spy(),
@@ -308,6 +309,172 @@ describe("consent", function() {
                         expect(res).toHaveProperty("googlePersonalizationData.created", null);
                         expect(res).toHaveProperty("googlePersonalizationData.lastUpdated", null);
                     });
+                });
+            });
+        });
+    });
+
+    describe("waitForUSPData", function() {
+        describe("using standard window reference", function() {
+            let win, uspObj, wasSuccessful;
+
+            beforeEach(function() {
+                const time = 150;
+                uspObj = {
+                    version: 1,
+                    uspString: "1YN-"
+                };
+                wasSuccessful = true;
+                win = {
+                    __uspapi: sinon.stub().callsFake((command, version, callback) => {
+                        if (version !== 1) {
+                            throw new Error(`Invalid USP version: ${version}`);
+                        }
+                        if (command === "getuspdata") {
+                            setTimeout(() => {
+                                callback(uspObj, wasSuccessful);
+                            }, time);
+                            return;
+                        }
+                        throw new Error(`Unknown USPAPI command: ${command}`);
+                    }),
+                    addEventListener: sinon.spy(),
+                    postMessage: sinon.spy(),
+                    removeEventListener: sinon.spy()
+                };
+                win.top = win;
+            });
+
+            it("returns expected data", function() {
+                return waitForUSPData({ win }).then(res => {
+                    expect(res).toEqual("1YN-");
+                });
+            });
+
+            it("calls __uspapi with expected parameters", function() {
+                return waitForUSPData({ win }).then(res => {
+                    expect(win.__uspapi.calledWith("getuspdata", 1)).toBe(true);
+                    expect(typeof win.__uspapi.firstCall.args[2]).toBe("function");
+                });
+            });
+
+            it("fails with InvalidConsentError if consent payload is invalid", function() {
+                uspObj.uspString = "X";
+                return waitForUSPData({ win }).then(
+                    () => {
+                        throw new Error("Should not resolve");
+                    },
+                    err => {
+                        expect(err.name).toEqual("InvalidConsentError");
+                    }
+                );
+            });
+
+            it("fails with InvalidConsentError if not successful", function() {
+                wasSuccessful = false;
+                return waitForUSPData({ win }).then(
+                    () => {
+                        throw new Error("Should not resolve");
+                    },
+                    err => {
+                        expect(err.name).toEqual("InvalidConsentError");
+                    }
+                );
+            });
+
+            it("completes successfully if success state undefined", function() {
+                wasSuccessful = undefined;
+                return waitForUSPData({ win }).then(res => {
+                    expect(res).toEqual("1YN-");
+                });
+            });
+        });
+
+        describe("using postMessage", function() {
+            let win;
+
+            beforeEach(function() {
+                const time = 100;
+                const messageHandlers = [];
+                win = {
+                    addEventListener: sinon.stub().callsFake((name, cb) => {
+                        if (name === "message") {
+                            messageHandlers.push(cb);
+                        }
+                    }),
+                    postMessage: sinon.stub().callsFake(msg => {
+                        setTimeout(() => {
+                            messageHandlers.forEach(hndlr =>
+                                hndlr({
+                                    data: msg
+                                })
+                            );
+                        }, time);
+                        try {
+                            const payload = typeof msg === "string" ? JSON.parse(msg) : msg;
+                            if (payload.__uspapiCall) {
+                                switch (payload.__uspapiCall.command) {
+                                    case "getuspdata":
+                                        win.postMessage(
+                                            JSON.stringify({
+                                                __uspapiReturn: {
+                                                    returnValue: "1N--",
+                                                    success: true,
+                                                    callId: payload.__uspapiCall.callId
+                                                }
+                                            })
+                                        );
+                                        break;
+                                    default:
+                                        throw new Error(
+                                            `Unspecified USPAPI command: ${payload.__uspapiCall.command}`
+                                        );
+                                }
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }),
+                    removeEventListener: sinon.stub().callsFake((name, cb) => {
+                        if (name === "message") {
+                            const ind = messageHandlers.indexOf(cb);
+                            if (ind >= 0) {
+                                messageHandlers.splice(ind, 1);
+                            }
+                        }
+                    })
+                };
+                win.top = win;
+            });
+
+            it("returns expected data", function() {
+                return waitForUSPData({ win }).then(res => {
+                    expect(res).toEqual("1N--");
+                });
+            });
+        });
+
+        describe("when cookie is set", function() {
+            let win;
+
+            beforeEach(function() {
+                const time = 150;
+                win = {
+                    __uspapi: sinon.stub().callsFake(() => {}),
+                    document: {
+                        cookie:
+                            "_ga=GA1.2.388359608.1543305257; _octo=GH1.1.639453252.1543305257; tz=Europe%2FHelsinki; us_privacy=1YYY"
+                    },
+                    addEventListener: sinon.spy(),
+                    postMessage: sinon.spy(),
+                    removeEventListener: sinon.spy()
+                };
+                win.top = win;
+            });
+
+            it("returns expected data", function() {
+                return waitForUSPData({ win }).then(res => {
+                    expect(res).toEqual("1YYY");
                 });
             });
         });
