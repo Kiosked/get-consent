@@ -122,21 +122,23 @@ const googleConsent = await getGoogleConsent({
 Fetching the USP string is performed using different methods for the most part:
 
 ```javascript
-import { getUSPString, onUSPString, uspApplies } from "get-consent";
+import { getUSPString, onUSPString, uspApplies, uspOptsOut } from "get-consent";
 
 // ...
 
-const uspString = await getUSPString();
-// 1YN-
-const uspAppliesToUser = uspApplies(uspString);
-// true
+const uspString = await getUSPString();// 1YN-
+uspApplies(uspString); // true
+uspOptsOut(uspString); // false
 
-onUSPString(uspStr => {
-    // 1---
-    const uspAppliesToUser = uspApplies(uspStr);
-    // false
+onUSPString(uspStr => { // 1---
+    uspApplies(uspStr); // false
+    uspOptsOut(uspStr); // false
 });
 ```
+
+The `uspApplies` and `uspOptsOut` methods provide detection for whether or not a US Privacy string is valid to use and how it affects data sales opt-out. The `uspApplies` method will return `true` for all valid USP strings that are **not** `1---`. The `uspOptsOut` will return true for all valid USP strings that specify **yes** (`Y`) for the 3rd character of the string.
+
+_You can read more about the US Privacy string format in the [IAB specification](https://iabtechlab.com/wp-content/uploads/2019/11/U.S.-Privacy-String-v1.0-IAB-Tech-Lab.pdf)._
 
 ### Consent Callbacks
 
