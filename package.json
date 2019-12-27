@@ -33,6 +33,10 @@
       "node_modules",
       "source"
     ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.history"
+    ],
     "transform": {
       "^.+\\.js$": "babel-jest"
     }
