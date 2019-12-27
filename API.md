@@ -50,6 +50,7 @@
     * [.exports.onVendorConsent(cb, [options])](#module_GetConsent.exports.onVendorConsent) ⇒ <code>function</code>
     * [.exports.createMem()](#module_GetConsent.exports.createMem) ⇒ [<code>Mem</code>](#Mem)
     * [.exports.uspApplies(str)](#module_GetConsent.exports.uspApplies) ⇒ <code>Boolean</code>
+    * [.exports.uspOptsOut(str)](#module_GetConsent.exports.uspOptsOut) ⇒ <code>Boolean</code>
 
 <a name="module_GetConsent.exports.getConsentData"></a>
 
@@ -205,17 +206,44 @@ Create a new memoization instance
 
 ### GetConsent.exports.uspApplies(str) ⇒ <code>Boolean</code>
 Detect whether or not a value is indicative of
-USP applying to the user
+USP applying to the user (does not detect
+whether or not the string disables data sales).
 
 **Kind**: static method of [<code>GetConsent</code>](#module_GetConsent)  
 **Returns**: <code>Boolean</code> - Whether or not a value is a
  USP string and whether or not USP applies due
  to it  
+**See**: uspOptsOut  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | str | <code>String</code> \| <code>\*</code> | The USP string or value |
 
+**Example**  
+```js
+uspApplies("1---") // false
+ uspApplies("1YN-") // true
+```
+<a name="module_GetConsent.exports.uspOptsOut"></a>
+
+### GetConsent.exports.uspOptsOut(str) ⇒ <code>Boolean</code>
+Detect whether or not a USP string opts a user
+out of data sales.
+
+**Kind**: static method of [<code>GetConsent</code>](#module_GetConsent)  
+**Returns**: <code>Boolean</code> - True if the value is a USP
+ string that opts the user out from the sale
+ of their data  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| str | <code>String</code> \| <code>\*</code> | The USP string or value |
+
+**Example**  
+```js
+uspOptsOut("1---") // false
+ uspOptsOut("1YYN") // true
+```
 <a name="getUSPCookieValue"></a>
 
 ## getUSPCookieValue([win]) ⇒ <code>String</code> \| <code>null</code>

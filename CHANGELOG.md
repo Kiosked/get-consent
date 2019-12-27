@@ -1,5 +1,10 @@
 # Get-Consent changelog
 
+## v1.4.0
+_2019-12-27_
+
+ * `uspOptsOut` method for detecting if a USP string opts out of data sales
+
 ## v1.3.0
 _2019-12-18_
 
