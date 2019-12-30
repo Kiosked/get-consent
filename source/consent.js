@@ -290,9 +290,12 @@ function waitForUSPAPI(win = window) {
             win.removeEventListener("message", handleMsg, false);
         };
         const timer = startTimer(() => {
-            if (typeof win.__uspapi === "function") {
+            if (typeof win.__uspStrOvr === "string") {
                 stopListening();
-                resolve("obj");
+                return resolve("ovr");
+            } else if (typeof win.__uspapi === "function") {
+                stopListening();
+                return resolve("obj");
             }
             topWin.postMessage(
                 JSON.stringify({
@@ -380,6 +383,16 @@ export function waitForUSPData(options = {}) {
                             }
                         })
                     );
+                } else if (accessMethod === "ovr") {
+                    const str = win.__uspStrOvr;
+                    if (isUSPString(str)) {
+                        return resolve(str);
+                    }
+                    const err = new Error(
+                        `Invalid USP payload response from USP override property: ${str}`
+                    );
+                    err.name = INVALID_CONSENT_ERROR;
+                    return reject(err);
                 } else {
                     reject(new Error(`Unknown USP API access method: ${accessMethod}`));
                 }

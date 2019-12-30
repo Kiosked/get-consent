@@ -454,6 +454,26 @@ describe("consent", function() {
             });
         });
 
+        describe("when override is set", function() {
+            let win;
+
+            beforeEach(function() {
+                win = {
+                    addEventListener: sinon.spy(),
+                    postMessage: sinon.spy(),
+                    removeEventListener: sinon.spy(),
+                    __uspStrOvr: "1YY-"
+                };
+                win.top = win;
+            });
+
+            it("returns expected data", function() {
+                return waitForUSPData({ win }).then(res => {
+                    expect(res).toEqual("1YY-");
+                });
+            });
+        });
+
         describe("when cookie is set", function() {
             let win;
 
