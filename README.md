@@ -140,6 +140,14 @@ The `uspApplies` and `uspOptsOut` methods provide detection for whether or not a
 
 _You can read more about the US Privacy string format in the [IAB specification](https://iabtechlab.com/wp-content/uploads/2019/11/U.S.-Privacy-String-v1.0-IAB-Tech-Lab.pdf)._
 
+#### Manual USP override
+
+You can forcibly override the USP string for a page by setting the property `window.__uspStrOvr` to a **valid** US privacy string. For example:
+
+```javascript
+window.__uspStrOvr = "1YY-"; // Opt the user out of the sale of their data
+```
+
 ### Consent Callbacks
 
 Other methods are available for using callbacks as a way to receive consent data:
