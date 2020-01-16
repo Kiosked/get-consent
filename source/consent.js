@@ -172,7 +172,8 @@ function waitForCMP(win = window) {
                         command: "ping",
                         parameter: null
                     }
-                })
+                }),
+                "*"
             );
         }, CMP_CHECK_TIMINGS);
         const handleMsg = msg => {
@@ -269,7 +270,8 @@ export function waitForConsentData(options = {}) {
                                 command: cmpCmd,
                                 parameter: cmpParam
                             }
-                        })
+                        }),
+                        "*"
                     );
                 } else {
                     reject(new Error(`Unknown CMP access method: ${accessMethod}`));
@@ -304,7 +306,8 @@ function waitForUSPAPI(win = window) {
                         version: USPAPI_VERSION,
                         callId: callID
                     }
-                })
+                }),
+                "*"
             );
         }, CMP_CHECK_TIMINGS);
         const handleMsg = msg => {
@@ -381,7 +384,8 @@ export function waitForUSPData(options = {}) {
                                 version: USPAPI_VERSION,
                                 callId: callID
                             }
-                        })
+                        }),
+                        "*"
                     );
                 } else if (accessMethod === "ovr") {
                     const str = win.__uspStrOvr;
