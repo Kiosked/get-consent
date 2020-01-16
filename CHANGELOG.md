@@ -1,9 +1,14 @@
 # Get-Consent changelog
 
-## v1.4.1
+## v1.5.1
 _2020-01-16_
 
  * Fix `postMessage` communication (#9)
+
+## v1.5.0
+_2019-12-30_
+
+ * USP override via `window.__uspStrOvr`
 
 ## v1.4.0
 _2019-12-27_
